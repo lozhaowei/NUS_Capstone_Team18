@@ -22,3 +22,16 @@ def query_database(query):
 
     except Exception as e:
         print("Error:", e)
+
+def insert_data(table_name, data):
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        data.to_sql(name=table_name, con=conn, if_exists='replace', index=False)
+
+        conn.commit()
+        conn.close()
+
+    except Exception as e:
+        print("Error:", e)
