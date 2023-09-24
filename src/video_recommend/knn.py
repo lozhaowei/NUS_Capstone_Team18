@@ -6,10 +6,11 @@ from typing import Tuple
 from datetime import datetime, timedelta
 from scipy import spatial
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ndcg_score, roc_auc_score
-from src.data import database
+from src.data.database import CONN_PARAMS, insert_data
 import pymysql
 import pandas as pd
 from decouple import config
+
 
 warnings.filterwarnings('ignore')
 
@@ -131,10 +132,6 @@ def run_knn_recommender(date, K, num_cycles):
     vote_df = pd.read_feather('datasets/raw/vote.feather')
     model_statistics = pd.DataFrame(columns=['datetime', 'roc auc score', 'accuracy', 'precision', 'recall', 'f1 score', 'hitratio@k', 'ndcg@k'])
 
-    # Establish a database connection
-    conn = pymysql.connect(**CONN_PARAMS)
-    cursor = conn.cursor()
-
     for cycle in range(num_cycles):
         user_interest_matrix, video_category_matrix = create_embedding_matrices(user_interest_df, user_df, season_df, video_df, vote_df, date)
         model_statistics_for_training_cycle = get_summary_statistics(vote_df, user_interest_matrix, video_category_matrix, date, K)
@@ -147,11 +144,11 @@ def run_knn_recommender(date, K, num_cycles):
         table_name = 'nus_knn_eval'
         csv_data = pd.read_csv('datasets/final/nus_knn_eval.csv')
 
-        database.insert_data(table_name, csv_data)  
+        # Use the insert_data function from the database.py module to insert data into the database
+        insert_data(table_name, csv_data)
         print(f"Data updated in MySQL table '{table_name}' successfully.")
 
     except Exception as e:
         print("Error:", e)
 
-    cursor.close()
-    conn.close()
+

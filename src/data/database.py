@@ -2,7 +2,6 @@ import pymysql
 import pandas as pd
 from decouple import config
 
-
 CONN_PARAMS = {
     'host': config('DB_HOST'),
     'user': config('DB_USER'),
@@ -28,19 +27,27 @@ def insert_data(table_name, data):
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
 
-        # Drop the table if it exists
-        cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+        # Create a table if it doesn't exist with backticks for column names
+        create_table_query = f'''
+        CREATE TABLE IF NOT EXISTS {table_name} (
+            datetime DATETIME,
+            `roc auc score` FLOAT,
+            accuracy FLOAT,
+            `precision` FLOAT,
+            recall FLOAT,
+            `f1 score` FLOAT,
+            `hitratio@k` FLOAT,
+            `ndcg@k` FLOAT
+        )
+        '''
+        cursor.execute(create_table_query)
 
-        # Create a new table with the same schema
-        data.to_sql(name=table_name, con=conn, index=False)
+        data_values = ', '.join(['%s'] * len(data.columns))
+        insert_query = f'INSERT INTO {table_name} VALUES ({data_values})'
+        cursor.executemany(insert_query, data.values.tolist())
 
         conn.commit()
         conn.close()
 
     except Exception as e:
         print("Error:", e)
-
-def table_exists(cursor, table_name):
-    cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
-    result = cursor.fetchone()
-    return result is not None
