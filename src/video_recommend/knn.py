@@ -7,8 +7,19 @@ from datetime import datetime, timedelta
 from scipy import spatial
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ndcg_score, roc_auc_score
 from src.data import database
+import pymysql
+import pandas as pd
+from decouple import config
 
 warnings.filterwarnings('ignore')
+
+CONN_PARAMS = {
+    'host': config('DB_HOST'),
+    'user': config('DB_USER'),
+    'password': config('DB_PASSWORD'),
+    'port': int(config('DB_PORT')),
+    'database': config('DB_NAME'),
+}
 
 def get_end_date(start_date: str) -> str:
     start_datetime_object = datetime.strptime(start_date, '%Y-%m-%d')
@@ -120,6 +131,10 @@ def run_knn_recommender(date, K, num_cycles):
     vote_df = pd.read_feather('datasets/raw/vote.feather')
     model_statistics = pd.DataFrame(columns=['datetime', 'roc auc score', 'accuracy', 'precision', 'recall', 'f1 score', 'hitratio@k', 'ndcg@k'])
 
+    # Establish a database connection
+    conn = pymysql.connect(**CONN_PARAMS)
+    cursor = conn.cursor()
+
     for cycle in range(num_cycles):
         user_interest_matrix, video_category_matrix = create_embedding_matrices(user_interest_df, user_df, season_df, video_df, vote_df, date)
         model_statistics_for_training_cycle = get_summary_statistics(vote_df, user_interest_matrix, video_category_matrix, date, K)
@@ -132,12 +147,11 @@ def run_knn_recommender(date, K, num_cycles):
         table_name = 'nus_knn_eval'
         csv_data = pd.read_csv('datasets/final/nus_knn_eval.csv')
 
-        if database.table_exists(table_name):
-            database.update_data(table_name, csv_data)
-            print(f"Data updated in MySQL table '{table_name}' successfully.")
-        else:
-            database.create_table(table_name, csv_data)
-            print(f"New MySQL table '{table_name}' created and data inserted successfully.")
+        database.insert_data(table_name, csv_data)  
+        print(f"Data updated in MySQL table '{table_name}' successfully.")
 
     except Exception as e:
         print("Error:", e)
+
+    cursor.close()
+    conn.close()

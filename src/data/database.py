@@ -28,10 +28,19 @@ def insert_data(table_name, data):
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
 
-        data.to_sql(name=table_name, con=conn, if_exists='replace', index=False)
+        # Drop the table if it exists
+        cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+
+        # Create a new table with the same schema
+        data.to_sql(name=table_name, con=conn, index=False)
 
         conn.commit()
         conn.close()
 
     except Exception as e:
         print("Error:", e)
+
+def table_exists(cursor, table_name):
+    cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
+    result = cursor.fetchone()
+    return result is not None
