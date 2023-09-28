@@ -30,14 +30,14 @@ def insert_data(table_name, data):
         # Create a table if it doesn't exist with backticks for column names
         create_table_query = f'''
         CREATE TABLE IF NOT EXISTS {table_name} (
-            datetime DATETIME,
-            `roc auc score` FLOAT,
+            dt DATETIME,
+            `roc_auc_score` FLOAT,
             accuracy FLOAT,
             `precision` FLOAT,
             recall FLOAT,
-            `f1 score` FLOAT,
-            `hitratio@k` FLOAT,
-            `ndcg@k` FLOAT
+            `f1_score` FLOAT,
+            `hit_ratio_k` FLOAT,
+            `ndcg_k` FLOAT
         )
         '''
         cursor.execute(create_table_query)
@@ -48,6 +48,8 @@ def insert_data(table_name, data):
 
         conn.commit()
         conn.close()
+
+        print(f"Data updated in MySQL table '{table_name}' successfully.")
 
     except Exception as e:
         print("Error:", e)

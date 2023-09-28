@@ -88,12 +88,12 @@ def ndcg_at_k(y_true, y_pred, K):
 def get_summary_statistics(vote_df, user_interest_matrix, video_category_matrix, date, K):
     _, vote_test = train_test_split_for_data(vote_df, 'created_at', date)
     vote_test['created_at'] = vote_test['created_at'].dt.date
-    model_statistics = pd.DataFrame(columns=['datetime', 'roc auc score', 'accuracy', 'precision', 'recall', 'f1 score', 'hitratio@k', 'ndcg@k'])
+    model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
     
     for day in sorted(vote_test['created_at'].unique()):
         print(day)
         voted_videos_for_day = vote_test[vote_test['created_at'] == day]
-        summary_statistics = pd.DataFrame(columns=['user_id', 'roc auc score', 'accuracy', 'precision', 'recall', 'f1 score', 'hitratio@k', 'ndcg@k'])
+        summary_statistics = pd.DataFrame(columns=['user_id', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
 
         for user_id in voted_videos_for_day['voter_id'].unique():
             if user_id not in user_interest_matrix.index:
@@ -130,7 +130,7 @@ def run_knn_recommender(date, K, num_cycles):
     season_df = pd.read_feather('datasets/raw/season.feather')
     video_df = pd.read_feather('datasets/raw/video.feather')
     vote_df = pd.read_feather('datasets/raw/vote.feather')
-    model_statistics = pd.DataFrame(columns=['datetime', 'roc auc score', 'accuracy', 'precision', 'recall', 'f1 score', 'hitratio@k', 'ndcg@k'])
+    model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
 
     for cycle in range(num_cycles):
         user_interest_matrix, video_category_matrix = create_embedding_matrices(user_interest_df, user_df, season_df, video_df, vote_df, date)
@@ -144,7 +144,7 @@ def run_knn_recommender(date, K, num_cycles):
         table_name = 'nus_knn_eval'
         csv_data = pd.read_csv('datasets/final/nus_knn_eval.csv')
 
-        # Use the insert_data function from the database.py module to insert data into the database
+        # Use the insert_data function to insert data into the database
         insert_data(table_name, csv_data)
         print(f"Data updated in MySQL table '{table_name}' successfully.")
 

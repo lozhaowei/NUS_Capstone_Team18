@@ -9,7 +9,7 @@ def main():
     #                 'conversation_reply', 'follow', 'post', 'post_feed', 'post_like', 'season',
     #                 'user', 'user_interest', 'video', 'vote'])
 
-    nus_knn_eval = run_knn_recommender('2023-08-01', 10, 16)
+    nus_knn_eval = run_knn_recommender('2023-08-01', 10, 32)
     print(nus_knn_eval)
 
 if __name__ == "__main__":
