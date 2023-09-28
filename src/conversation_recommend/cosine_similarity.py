@@ -175,6 +175,8 @@ def statistics(df, k, date):
     # Convert dictionary to DataFrame
     metrics_df = pd.DataFrame(data)
 
+    return metrics_df
+
 def run_collaborative_recommender(date, k, num_cycles):
     conversation_like = pd.read_feather('datasets/raw/conversation_like.feather')
     model_statistics = pd.DataFrame(columns=['datetime', 'roc auc score', 'accuracy', 'precision', 'recall', 'f1 score', 'hitratio@k', 'ndcg@k'])
