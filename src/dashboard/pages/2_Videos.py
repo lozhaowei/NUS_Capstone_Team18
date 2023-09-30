@@ -1,8 +1,7 @@
 import streamlit as st
-from streamlit_star_rating import st_star_rating
 
-from Home import load_data, get_summary_metric_for_model, filter_data, get_chart_data_for_multiple_models
-from src.dashboard.database import insert_model_feedback
+from src.dashboard.data.data_handling import load_data, get_summary_metric_for_model, filter_data, \
+    get_chart_data_for_multiple_models
 from src.dashboard.components import user_feedback_component
 
 st.set_page_config(layout="wide")
