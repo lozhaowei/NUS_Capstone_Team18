@@ -1,5 +1,4 @@
 import pymysql
-import pandas as pd
 from decouple import config
 
 CONN_PARAMS = {
@@ -17,16 +16,17 @@ def insert_model_feedback(data):
         return 1
 
     try:
-        # conn = pymysql.connect(**CONN_PARAMS)
-        # cursor = conn.cursor()
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
 
-        insert_query = f"INSERT INTO nus_model_feedback (rating, feedback) " \
-                       f"VALUES ({data['rating']}, {data['feedback']})"
+        insert_query = f"INSERT INTO nus_model_feedback (rating, feedback, model) " \
+                       f"VALUES ({data['rating']}, '{data['feedback']}', '{data['model']}')"
+
         print(insert_query)
-        # cursor.execute(insert_query, data)
-        #
-        # conn.commit()
-        # conn.close()
+        cursor.execute(insert_query, data)
+
+        conn.commit()
+        conn.close()
 
         print(f"Data inserted into MySQL table nus_model_feedback successfully.")
         return 0
@@ -34,9 +34,3 @@ def insert_model_feedback(data):
     except Exception as e:
         print("Error:", e)
         return 1
-
-    # finally:
-    #     if conn.is_connected():
-    #         cursor.close()
-    #         conn.close()
-    #         print('MySQL connection is closed')

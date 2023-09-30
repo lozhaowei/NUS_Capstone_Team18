@@ -3,7 +3,7 @@ from streamlit_star_rating import st_star_rating
 
 from src.dashboard.database import insert_model_feedback
 
-def user_feedback_component():
+def user_feedback_component(model):
     with st.form("feedback_form", clear_on_submit=True):
         st.write('User Feedback')
 
@@ -15,11 +15,11 @@ def user_feedback_component():
         submitted = st.form_submit_button("Submit")
 
         if submitted:
-            print(rating)
             if feedback == '':
                 st.warning('Please enter feedback before submitting!')
             else:
-                if insert_model_feedback({'feedback': feedback, 'rating': rating}) == 0:
+                # TODO add user id
+                if insert_model_feedback({'feedback': feedback, 'rating': rating, 'model': model}) == 0:
                     st.success('Feedback submitted!')
                 else:
                     st.warning('Error submitting feedback!')
