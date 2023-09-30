@@ -2,6 +2,7 @@ import pandas as pd
 from src.data.database import query_database, insert_data, CONN_PARAMS
 from src.data.make_datasets import pull_raw_data, get_dashboard_data
 from src.video_recommend.knn import run_knn_recommender
+from src.video_recommend.random_forest import run_Model
 
 
 def main():
@@ -10,8 +11,13 @@ def main():
     #                 'user', 'user_interest', 'video', 'vote'])
 
     # nus_knn_eval = run_knn_recommender('2023-08-01', 10, 32)
-    get_dashboard_data()
     # print(nus_knn_eval)
+
+    nus_random_forest_eval = run_Model()
+    print(nus_random_forest_eval)
+
+    # get dashboard metrics
+    get_dashboard_data()
 
 if __name__ == "__main__":
     main()
