@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_star_rating import st_star_rating
 
-from src.dashboard.database import insert_model_feedback
+from src.dashboard.data.database import insert_model_feedback
 
 def user_feedback_component(model):
     with st.form("feedback_form", clear_on_submit=True):
@@ -10,7 +10,7 @@ def user_feedback_component(model):
         rating = st_star_rating("Model rating", maxValue=5, defaultValue=5, key="rating",
                                 customCSS="h3 {font-size: 14px;}")
 
-        feedback = st.text_area('Add feedback', placeholder='Enter User Feedback')
+        feedback = st.text_area('Add feedback', placeholder='Enter User Feedback', max_chars=500)
 
         submitted = st.form_submit_button("Submit")
 
