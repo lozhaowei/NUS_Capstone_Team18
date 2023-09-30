@@ -22,6 +22,11 @@ def query_database(query):
     except Exception as e:
         print("Error:", e)
 
+    finally:
+        if conn.is_connected():
+            conn.close()
+            print('MySQL connection is closed')
+
 def insert_data(table_name, data):
     try:
         conn = pymysql.connect(**CONN_PARAMS)
