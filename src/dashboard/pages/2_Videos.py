@@ -47,4 +47,4 @@ st.line_chart(line_chart_data, y=columns_to_plot)
 
 
 # user feedback
-user_feedback_component('knn_videos')
+user_feedback_component('video', model_list)

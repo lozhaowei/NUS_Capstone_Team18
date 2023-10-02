@@ -13,7 +13,6 @@ def write_feather_data(table, df, data_dir):
 
     print(f"Table '{table}' saved as '{feather_file_path}'")
 
-
 def pull_raw_data(list_of_tables):
     try:
         for table in list_of_tables:
@@ -28,12 +27,19 @@ def pull_raw_data(list_of_tables):
     except Exception as e:
         print("Error:", e)
 
-def get_dashboard_data():
+def get_dashboard_data(model):
+    """
+    queries database to obtain metrics data of specific model, renames the columns for frontend use,
+    then writes it as a feather file
+    :param model: model name
+    """
     try:
-        query = f"SELECT * FROM nus_knn_eval"
+        table_name = f'nus_{model}_eval'
+        query = f"SELECT * FROM {table_name}"
         # df = database.query_database(query)
-        df = pd.read_csv('datasets/final/nus_knn_eval.csv')
+        df = pd.read_csv(f'datasets/final/{table_name}.csv')
 
+        # Rename columns for frontend use
         df.rename(columns={'roc_auc_score': 'ROC AUC Score', 'accuracy': 'Accuracy', 'precision': 'Precision',
                            'recall': 'Recall', 'f1_score': 'F1 Score', 'hit_ratio_k': 'HitRatio@K',
                            'ndcg_k': 'NDCG@K'}, inplace=True)
@@ -41,7 +47,7 @@ def get_dashboard_data():
         base_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(base_dir, '../..', 'datasets', 'final')
 
-        write_feather_data('nus_knn_eval', df, data_dir)
+        write_feather_data(table_name, df, data_dir)
 
     except Exception as e:
         print("Error:", e)

@@ -17,7 +17,7 @@ def main():
     print(nus_random_forest_eval)
 
     # get dashboard metrics
-    get_dashboard_data()
+    get_dashboard_data('knn')
 
 if __name__ == "__main__":
     main()
