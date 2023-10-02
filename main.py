@@ -9,8 +9,14 @@ def main():
     #                 'conversation_reply', 'follow', 'post', 'post_feed', 'post_like', 'season',
     #                 'user', 'user_interest', 'video', 'vote'])
 
-    nus_knn_eval = run_knn_recommender('2023-08-01', 10, 32)
-    print(nus_knn_eval)
+    # nus_knn_eval = run_knn_recommender('2023-08-01', 10, 32)
+    # print(nus_knn_eval)
+
+    nus_random_forest_eval = run_Model()
+    print(nus_random_forest_eval)
+
+    # get dashboard metrics (commented out because i transferred this directly to the dashboard)
+    # get_dashboard_data()
 
 if __name__ == "__main__":
     main()
