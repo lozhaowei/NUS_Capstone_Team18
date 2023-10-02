@@ -1,6 +1,7 @@
 import pymysql
 import pandas as pd
 from decouple import config
+import os 
 
 CONN_PARAMS = {
     'host': config('DB_HOST'),
@@ -30,20 +31,28 @@ def insert_data(table_name, data):
         # Create a table if it doesn't exist with backticks for column names
         create_table_query = f'''
         CREATE TABLE IF NOT EXISTS {table_name} (
-            dt DATETIME,
+            `id` INT PRIMARY KEY,
+            `dt` DATE,
             `roc_auc_score` FLOAT,
-            accuracy FLOAT,
+            `accuracy` FLOAT,
             `precision` FLOAT,
-            recall FLOAT,
+            `recall` FLOAT,
             `f1_score` FLOAT,
             `hit_ratio_k` FLOAT,
-            `ndcg_k` FLOAT
+            `ndcg_k` FLOAT,
+            `model` VARCHAR(255)
         )
         '''
         cursor.execute(create_table_query)
 
         data_values = ', '.join(['%s'] * len(data.columns))
-        insert_query = f'INSERT INTO {table_name} VALUES ({data_values})'
+        insert_query = f'INSERT INTO {table_name} (`dt`, `roc_auc_score`, `accuracy`, `precision`, `recall`, `f1_score`, `hit_ratio_k`, `ndcg_k`, `model`) VALUES ({data_values})'
+        
+        # Convert 'dt' column to string before insertion
+        data['dt'] = data['dt'].astype(str)
+        # Convert NaN values to None for proper insertion
+        data = data.where(pd.notna(data), None)
+        
         cursor.executemany(insert_query, data.values.tolist())
 
         conn.commit()
@@ -53,3 +62,18 @@ def insert_data(table_name, data):
 
     except Exception as e:
         print("Error:", e)
+
+def combine_tables():
+    table1 = pd.read_csv('datasets/final/random_forest_eval.csv')
+    table2 = pd.read_csv('datasets/final/nus_knn_eval.csv')
+
+    # Combine tables
+    combined_table = pd.concat([table1, table2], ignore_index=True)
+
+    output_folder = 'datasets/final'
+    os.makedirs(output_folder, exist_ok=True)
+    output_path = os.path.join(output_folder, "nus_video_eval.csv")
+    combined_table.to_csv(output_path, index=False)
+    
+    print(f"Combined data saved to '{output_path}' successfully.")
+    return output_path
