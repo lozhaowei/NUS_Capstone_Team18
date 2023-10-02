@@ -12,15 +12,15 @@ def main():
 
     # nus_knn_eval = run_knn_recommender('2023-08-01', 10, 32)
     # print(nus_knn_eval)
-    # nus_random_forest_eval = run_Model()
-    # print(nus_random_forest_eval)
 
+    nus_random_forest_eval = run_Model()
+    print(nus_random_forest_eval)
+    
     # combine_tables()
     combined_data = pd.read_csv("datasets/final/nus_video_eval.csv")
     insert_data("nus_video_eval", combined_data)
 
-
-    # get dashboard metrics
+    # get dashboard metrics (commented out because i transferred this directly to the dashboard)
     # get_dashboard_data()
 
 if __name__ == "__main__":
