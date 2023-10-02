@@ -1,5 +1,4 @@
 import pymysql
-import logging as log
 from decouple import config
 
 CONN_PARAMS = {
@@ -17,7 +16,7 @@ def insert_model_feedback(data):
     :return: 0 if success, 1 if failed
     """
     if data is None:
-        print("Error getting feedback data")
+        log.error("Error getting feedback data")
         return 1
 
     if len(data['feedback']) > 500:
@@ -42,5 +41,5 @@ def insert_model_feedback(data):
         return 0
 
     except Exception as e:
-        log.error(e)
+        print("Error:", e)
         return 1
