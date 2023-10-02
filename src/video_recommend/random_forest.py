@@ -47,15 +47,6 @@ def run_Model():
     columns = ['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k']
     model_statistics = pd.DataFrame(data, columns=columns)
 
+    model_statistics['model'] = 'random_forest'
     model_statistics.to_csv('datasets/final/random_forest_eval.csv', index=False)
 
-    try:
-        table_name = 'nus_random_forest_eval'
-        csv_data = pd.read_csv('datasets/final/random_forest_eval.csv')
-
-        # Use the insert_data function to insert data into the database
-        insert_data(table_name, csv_data)
-        print(f"Data updated in MySQL table '{table_name}' successfully.")
-
-    except Exception as e:
-        print("Error:", e)

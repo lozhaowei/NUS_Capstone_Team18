@@ -1,12 +1,13 @@
 import streamlit as st
 
-from src.dashboard.data.data_handling import load_data, get_summary_metric_for_model, filter_data, \
-    get_chart_data_for_multiple_models
+from src.dashboard.data.data_handling import get_summary_metric_for_model, filter_data, \
+    get_graph_for_summary_metric
+from src.data.make_datasets import get_dashboard_data
 from src.dashboard.components import user_feedback_component
 
 st.set_page_config(layout="wide")
 
-data = load_data().reset_index(drop=True)
+data = get_dashboard_data("video").reset_index(drop=True)
 model_list = data['model'].unique()
 
 col1, col2 = st.columns(2)
@@ -31,19 +32,14 @@ if st.checkbox('Show metrics results'):
     st.write('Metrics Data')
     filtered_data
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 col1.subheader('Line chart')
-metrics = col2.multiselect('Metrics', options=['Precision', 'Recall', 'Accuracy', 'F1 Score', 'ROC AUC Score',
+freq = col2.radio("Frequency", ["D", "W", "M", "Y"], horizontal=True)
+metrics = col3.multiselect('Metrics', options=['Precision', 'Recall', 'Accuracy', 'F1 Score', 'ROC AUC Score',
                                                'HitRatio@K', 'NDCG@K'], default='ROC AUC Score')
 
-if len(models) == 1:
-    line_chart_data = filtered_data[metrics + ['dt']].set_index('dt')
-    columns_to_plot = metrics
-else:
-    line_chart_data = get_chart_data_for_multiple_models(data, models, metrics)
-    columns_to_plot = line_chart_data.columns
-
-st.line_chart(line_chart_data, y=columns_to_plot)
+fig = get_graph_for_summary_metric(data, filtered_data, freq, models, metrics)
+st.plotly_chart(fig, use_container_width=True)
 
 
 # user feedback
