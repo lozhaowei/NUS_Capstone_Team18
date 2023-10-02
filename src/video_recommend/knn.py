@@ -138,17 +138,8 @@ def run_knn_recommender(date, K, num_cycles):
         model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
         date = get_end_date(date)
 
+    model_statistics['model'] = 'knn'
     model_statistics.to_csv('datasets/final/nus_knn_eval.csv', index=False)
 
-    try:
-        table_name = 'nus_knn_eval'
-        csv_data = pd.read_csv('datasets/final/nus_knn_eval.csv')
-
-        # Use the insert_data function to insert data into the database
-        insert_data(table_name, csv_data)
-        print(f"Data updated in MySQL table '{table_name}' successfully.")
-
-    except Exception as e:
-        print("Error:", e)
 
 
