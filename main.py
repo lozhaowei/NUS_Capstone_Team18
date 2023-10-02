@@ -15,9 +15,9 @@ def main():
     # nus_random_forest_eval = run_Model()
     # print(nus_random_forest_eval)
 
-    eval_table = combine_tables()
-    combined_data = pd.read_csv(eval_table)
-    # insert_data("nus_video_eval", combined_data)
+    # combine_tables()
+    combined_data = pd.read_csv("datasets/final/nus_video_eval.csv")
+    insert_data("nus_video_eval", combined_data)
 
 
     # get dashboard metrics

@@ -31,7 +31,7 @@ def insert_data(table_name, data):
         # Create a table if it doesn't exist with backticks for column names
         create_table_query = f'''
         CREATE TABLE IF NOT EXISTS {table_name} (
-            `id` INT PRIMARY KEY,
+            `id` INT PRIMARY KEY AUTO_INCREMENT,
             `dt` DATE,
             `roc_auc_score` FLOAT,
             `accuracy` FLOAT,
