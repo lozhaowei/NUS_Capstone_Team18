@@ -1,7 +1,8 @@
 import pandas as pd
-from src.data.database import query_database, insert_data, CONN_PARAMS
-from src.data.make_datasets import pull_raw_data
+from src.data.database import query_database, insert_data, CONN_PARAMS, combine_tables
+from src.data.make_datasets import pull_raw_data, get_dashboard_data
 from src.video_recommend.knn import run_knn_recommender
+from src.video_recommend.random_forest import run_Model
 
 
 def main():

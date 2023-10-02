@@ -1,12 +1,11 @@
 import streamlit as st
-import pandas as pd
 
 from src.dashboard.data.data_handling import get_summary_metric_for_model, filter_data, \
     get_graph_for_summary_metric
 from src.data.make_datasets import get_dashboard_data
 from src.dashboard.components import user_feedback_component
 
-st.set_page_config(layout='wide')
+st.set_page_config(layout="wide")
 
 data = get_dashboard_data("video").reset_index(drop=True)
 model_list = data['model'].unique()
@@ -18,9 +17,9 @@ filtered_data = filter_data(data, models)
 
 st.divider()
 
-precision_metric = get_summary_metric_for_model(filtered_data, models[0], 'precision')
-recall_metric = get_summary_metric_for_model(filtered_data, models[0], 'recall')
-f1_metric = get_summary_metric_for_model(filtered_data, models[0], 'f1 score')
+precision_metric = get_summary_metric_for_model(filtered_data, models[0], 'Precision')
+recall_metric = get_summary_metric_for_model(filtered_data, models[0], 'Recall')
+f1_metric = get_summary_metric_for_model(filtered_data, models[0], 'F1 Score')
 
 col1, col2, col3 = st.columns(3)
 col1.metric("Precision", precision_metric[0], precision_metric[1])
