@@ -2,7 +2,7 @@ import streamlit as st
 
 from src.dashboard.data.data_handling import get_summary_metric_for_model, filter_data, \
     get_graph_for_summary_metric
-from src.data.make_datasets import get_dashboard_data
+from src.dashboard.data.database import get_dashboard_data
 from src.dashboard.components import user_feedback_component
 
 st.set_page_config(layout="wide")

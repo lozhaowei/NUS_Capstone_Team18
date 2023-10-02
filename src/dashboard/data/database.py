@@ -1,5 +1,8 @@
 import pymysql
+import pandas as pd
 from decouple import config
+
+from src.data import database
 
 CONN_PARAMS = {
     'host': config('DB_HOST'),
@@ -8,6 +11,27 @@ CONN_PARAMS = {
     'port': int(config('DB_PORT')),
     'database': config('DB_NAME'),
 }
+
+def get_dashboard_data(entity):
+    """
+    queries database to obtain metrics data of specific model, renames the columns for frontend use,
+    then writes it as a feather file
+    :param entity: recommended item
+    """
+    try:
+        query = f"SELECT * FROM nus_{entity}_eval"
+        df = database.query_database(query)
+        df["dt"] = pd.to_datetime(df["dt"])
+
+        # Rename columns for frontend use
+        df.rename(columns={'roc_auc_score': 'ROC AUC Score', 'accuracy': 'Accuracy', 'precision': 'Precision',
+                           'recall': 'Recall', 'f1_score': 'F1 Score', 'hit_ratio_k': 'HitRatio@K',
+                           'ndcg_k': 'NDCG@K'}, inplace=True)
+
+        return df
+
+    except Exception as e:
+        print("Error:", e)
 
 def insert_model_feedback(data):
     """
