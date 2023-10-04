@@ -20,23 +20,12 @@ metrics_data = pd.DataFrame({
         'dt': ['2023-09-23', '2023-09-24', '2023-09-25']
     })
 
-if (
-    #for autheticated user that has access to this page
-    st.session_state["authenticated"]
-    and "Admin" in st.session_state["user_cognito_groups"]
-): 
-    '''The stucture & content of the '''
-    if st.checkbox('Show metrics results'):
-        st.write('Metrics Data')
-        metrics_data
+if st.checkbox('Show metrics results'):
+    st.write('Metrics Data')
+    metrics_data
 
-    st.subheader('Line chart')
-    st.line_chart(metrics_data, x='dt')
+st.subheader('Line chart')
+st.line_chart(metrics_data, x='dt')
 
-else:
-    if st.session_state["authenticated"]:
-        st.write("You do not have access. Please contact the administrator. But here is a sample for what you can see as GUEST :)")
-    else:
-        st.write("Please login!")
 
 
