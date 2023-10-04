@@ -34,8 +34,8 @@ def generate_random_data(start_date, end_date):
 
     return data
 
-def run_Model():
-    start_date = datetime(2023, 8, 14)
+def run_model():
+    start_date = datetime(2023, 7, 1)
     end_date = datetime(2023, 9, 6)
     num_cycles = (end_date - start_date).days + 1
 

@@ -28,9 +28,13 @@ def insert_data(table_name, data):
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
 
-        # Create a table if it doesn't exist with backticks for column names
+        # Drop the table if it exists
+        drop_table_query = f'DROP TABLE IF EXISTS {table_name}'
+        cursor.execute(drop_table_query)
+
+        # Create a table with backticks for column names
         create_table_query = f'''
-        CREATE TABLE IF NOT EXISTS {table_name} (
+        CREATE TABLE {table_name} (
             `id` INT PRIMARY KEY AUTO_INCREMENT,
             `dt` DATE,
             `roc_auc_score` FLOAT,
@@ -47,12 +51,12 @@ def insert_data(table_name, data):
 
         data_values = ', '.join(['%s'] * len(data.columns))
         insert_query = f'INSERT INTO {table_name} (`dt`, `roc_auc_score`, `accuracy`, `precision`, `recall`, `f1_score`, `hit_ratio_k`, `ndcg_k`, `model`) VALUES ({data_values})'
-        
+
         # Convert 'dt' column to string before insertion
         data['dt'] = data['dt'].astype(str)
         # Convert NaN values to None for proper insertion
         data = data.where(pd.notna(data), None)
-        
+
         cursor.executemany(insert_query, data.values.tolist())
 
         conn.commit()
