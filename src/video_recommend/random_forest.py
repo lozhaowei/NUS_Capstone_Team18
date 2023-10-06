@@ -36,7 +36,7 @@ def generate_random_data(start_date, end_date):
 
 def run_model():
     start_date = datetime(2023, 7, 1)
-    end_date = datetime(2023, 9, 6)
+    end_date = datetime.now()
     num_cycles = (end_date - start_date).days + 1
 
     data = []
