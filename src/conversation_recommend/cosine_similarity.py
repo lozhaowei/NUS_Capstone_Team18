@@ -151,14 +151,14 @@ def statistics(df, k, date):
     new_date = date - timedelta(days=1)
 
     data = {
-        'datetime': [new_date],
-        'roc auc score': [roc_auc],
+        'dt': [new_date],
+        'roc_auc_score': [roc_auc],
         'accuracy': [accuracy],
         'precision': [precision],
         'recall': [recall],
-        'f1 score': [f1],
-        f'hitratio@k': [hit_ratio_at_k],
-        f'ndcg@k': [ndcg_at_k]
+        'f1_score': [f1],
+        f'hit_ratio_k': [hit_ratio_at_k],
+        f'ndcg_k': [ndcg_at_k]
     }
 
     # Convert dictionary to DataFrame
@@ -167,12 +167,14 @@ def statistics(df, k, date):
     return metrics_df
 
 def run_collaborative_recommender(date, k, num_cycles, df):
-    conversation_like = df
-    model_statistics = pd.DataFrame(columns=['datetime', 'roc auc score', 'accuracy', 'precision', 'recall', 'f1 score', 'hitratio@k', 'ndcg@k'])
+    date = datetime.strptime(date, '%Y-%m-%d')
+    conversation_like = pd.read_feather('datasets/raw/conversation_like.feather')
+    model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
 
     for cycle in range(num_cycles):
         model_statistics_for_training_cycle = statistics(df, k, date)
         model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
         date = date + timedelta(days=1)
 
-    return model_statistics
+    model_statistics['model'] = 'knn'
+    model_statistics.to_csv('datasets/final/knn_convo.csv', index=False)

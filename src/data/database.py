@@ -67,9 +67,9 @@ def insert_data(table_name, data):
     except Exception as e:
         print("Error:", e)
 
-def combine_tables():
-    table1 = pd.read_csv('datasets/final/random_forest_eval.csv')
-    table2 = pd.read_csv('datasets/final/nus_knn_eval.csv')
+def combine_tables_video():
+    table1 = pd.read_csv('datasets/final/random_forest_video.csv')
+    table2 = pd.read_csv('datasets/final/knn_video.csv')
 
     # Combine tables
     combined_table = pd.concat([table1, table2], ignore_index=True)
@@ -81,3 +81,19 @@ def combine_tables():
     
     print(f"Combined data saved to '{output_path}' successfully.")
     return output_path
+
+def combine_tables_convo():
+    table1 = pd.read_csv('datasets/final/random_forest_convo.csv')
+    table2 = pd.read_csv('datasets/final/knn_convo.csv')
+
+    # Combine tables
+    combined_table = pd.concat([table1, table2], ignore_index=True)
+
+    output_folder = 'datasets/final'
+    os.makedirs(output_folder, exist_ok=True)
+    output_path = os.path.join(output_folder, "nus_convo_eval.csv")
+    combined_table.to_csv(output_path, index=False)
+    
+    print(f"Combined data saved to '{output_path}' successfully.")
+    return output_path
+

@@ -149,7 +149,7 @@ def run_knn_recommender(date, K, num_cycles):
         date = get_end_date(date)
 
     model_statistics['model'] = 'knn'
-    model_statistics.to_csv('datasets/final/nus_knn_eval.csv', index=False)
+    model_statistics.to_csv('datasets/final/knn_video.csv', index=False)
 
 
 
