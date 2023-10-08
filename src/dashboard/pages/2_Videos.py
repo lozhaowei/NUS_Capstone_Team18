@@ -3,7 +3,11 @@ import streamlit as st
 from src.dashboard.data.data_handling import get_summary_metric_for_model, filter_data, \
     get_graph_for_summary_metric
 from src.dashboard.data.database import get_dashboard_data
-from src.dashboard.components import user_feedback_component
+from src.dashboard.components import user_feedback_component, create_download_link
+
+from fpdf import FPDF
+from tempfile import NamedTemporaryFile
+
 
 st.set_page_config(layout="wide")
 
@@ -44,3 +48,23 @@ st.plotly_chart(fig, use_container_width=True)
 
 # user feedback
 user_feedback_component('video', model_list)
+
+form = st.form("Report Generator")
+submit = form.form_submit_button("Generate Report")
+
+if submit:
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B",20)
+    pdf.cell(65, 10, txt=f'Precision: {str(precision_metric[0])}', align="C")
+    pdf.cell(65, 10, txt=f'Recall: {str(recall_metric[0])}', align='C')
+    pdf.cell(65, 10, txt=f'f1-score: {str(f1_metric[0])}', align='C')
+    pdf.ln()
+    with NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+        fig.write_image(tmpfile.name)
+        pdf.image(tmpfile.name, w=200, h=100)
+    html = create_download_link(pdf.output(dest="S").encode("latin-1"), "testfile")
+    st.markdown(html, unsafe_allow_html=True)
+
+
+

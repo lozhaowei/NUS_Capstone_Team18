@@ -3,6 +3,9 @@ from streamlit_star_rating import st_star_rating
 
 from src.dashboard.data.database import insert_model_feedback
 
+import base64
+
+
 def user_feedback_component(recommended_item, model_list):
     """
     User Feedback Form
@@ -30,3 +33,7 @@ def user_feedback_component(recommended_item, model_list):
                     st.success('Feedback submitted!')
                 else:
                     st.warning('Error submitting feedback!')
+
+def create_download_link(val, filename):
+    b64 = base64.b64encode(val)  # val looks like b'...'
+    return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download file</a>'
