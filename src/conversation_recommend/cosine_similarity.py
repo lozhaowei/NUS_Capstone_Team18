@@ -1,16 +1,10 @@
 ## Importing Libraries 
 import warnings
 import pandas as pd
-import numpy as np
 from typing import Tuple
 from datetime import datetime, timedelta
 from scipy import spatial
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ndcg_score, roc_auc_score
-from src.data.database import CONN_PARAMS, insert_data
-import pymysql
-import pandas as pd
-from decouple import config
-import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 import re
 import numpy as np
@@ -25,13 +19,6 @@ from datetime import datetime, timedelta
 
 warnings.filterwarnings('ignore')
 
-CONN_PARAMS = {
-    'host': config('DB_HOST'),
-    'user': config('DB_USER'),
-    'password': config('DB_PASSWORD'),
-    'port': int(config('DB_PORT')),
-    'database': config('DB_NAME'),
-}
 
 def get_end_date(start_date: str) -> str:
     start_datetime_object = datetime.strptime(start_date, '%Y-%m-%d')
@@ -161,15 +148,17 @@ def statistics(df, k, date):
     hit_ratio_at_k = hit_count / total
     ndcg_at_k = np.mean(ndcgs)
 
+    new_date = date - timedelta(days=1)
+
     data = {
-        'datetime': [date],
-        'roc auc score': [roc_auc],
+        'dt': [new_date],
+        'roc_auc_score': [roc_auc],
         'accuracy': [accuracy],
         'precision': [precision],
         'recall': [recall],
-        'f1 score': [f1],
-        f'hitratio@{k}': [hit_ratio_at_k],
-        f'ndcg@{k}': [ndcg_at_k]
+        'f1_score': [f1],
+        f'hit_ratio_k': [hit_ratio_at_k],
+        f'ndcg_k': [ndcg_at_k]
     }
 
     # Convert dictionary to DataFrame
@@ -177,24 +166,15 @@ def statistics(df, k, date):
 
     return metrics_df
 
-def run_collaborative_recommender(date, k, num_cycles):
+def run_collaborative_recommender(date, k, num_cycles, df):
+    date = datetime.strptime(date, '%Y-%m-%d')
     conversation_like = pd.read_feather('datasets/raw/conversation_like.feather')
-    model_statistics = pd.DataFrame(columns=['datetime', 'roc auc score', 'accuracy', 'precision', 'recall', 'f1 score', 'hitratio@k', 'ndcg@k'])
+    model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
 
     for cycle in range(num_cycles):
-        model_statistics_for_training_cycle = statistics(conversation_like, k, date)
+        model_statistics_for_training_cycle = statistics(df, k, date)
         model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
-        date = get_end_date(date)
+        date = date + timedelta(days=1)
 
-    model_statistics.to_csv('datasets/final/nus_cosine_similarity_eval.csv', index=False)
-
-    try:
-        table_name = 'nus_cosine_similarity_eval'
-        csv_data = pd.read_csv('datasets/final/nus_cosine_similarity_eval.csv')
-
-        # Use the insert_data function from the database.py module to insert data into the database
-        insert_data(table_name, csv_data)
-        print(f"Data updated in MySQL table '{table_name}' successfully.")
-
-    except Exception as e:
-        print("Error:", e)
+    model_statistics['model'] = 'knn'
+    model_statistics.to_csv('datasets/final/knn_convo.csv', index=False)

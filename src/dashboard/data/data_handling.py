@@ -47,6 +47,7 @@ def get_graph_for_summary_metric(filtered_data, freq, models, metrics):
     line_chart_data = line_chart_data.resample(freq).mean()
 
     fig = px.line(line_chart_data, x=line_chart_data.index, y=columns_to_plot, title="Model Metrics")
+
     fig.update_xaxes(
         rangeselector=dict(
             buttons=list([

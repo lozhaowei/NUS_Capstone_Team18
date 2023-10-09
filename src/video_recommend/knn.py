@@ -23,13 +23,20 @@ CONN_PARAMS = {
 }
 
 def get_end_date(start_date: str) -> str:
-    if isinstance(start_date, str):
-        start_datetime_object = datetime.strptime(start_date, '%Y-%m-%d')
-    else:
-        start_datetime_object = start_date
-    end_datetime_object = start_datetime_object + timedelta(days=3)
-    end_date = end_datetime_object.strftime('%Y-%m-%d')
+    # start_datetime_object = datetime.strptime(start_date, '%Y-%m-%d')
+    # end_datetime_object = start_datetime_object + timedelta(days=3)
+    # end_date = end_datetime_object.strftime('%Y-%m-%d')
+    end_date = datetime.now().strftime('%Y-%m-%d')
     return end_date
+
+def get_num_cycles(start_date: str) -> int:
+    # Get today's date
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+    end_datetime = datetime.strptime(today_date, '%Y-%m-%d')
+    date_difference = (end_datetime - start_datetime).days
+
+    return date_difference
 
 def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     train_data = data[data[date_col] <= start_date]
@@ -142,7 +149,7 @@ def run_knn_recommender(date, K, num_cycles):
         date = get_end_date(date)
 
     model_statistics['model'] = 'knn'
-    model_statistics.to_csv('datasets/final/nus_knn_eval.csv', index=False)
+    model_statistics.to_csv('datasets/final/knn_video.csv', index=False)
 
 
 

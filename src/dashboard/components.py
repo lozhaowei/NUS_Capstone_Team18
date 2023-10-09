@@ -1,10 +1,13 @@
+import base64
 import streamlit as st
 from streamlit_star_rating import st_star_rating
 
+from fpdf import FPDF
 from src.data import database
 from src.video_recommend.knn import create_embedding_matrices
 from src.dashboard.data.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, get_graph_for_summary_metric
 from src.dashboard.data.database import get_data_for_real_time_section_videos, insert_model_feedback
+from tempfile import NamedTemporaryFile
 
 def summary_metrics_component(filtered_data, models):
     """
@@ -38,8 +41,6 @@ def real_time_data_visualisation_component():
     user_interest = user_interest_matrix.loc[user]
     st.write(user_interest)
 
-
-        
 def historical_retraining_data_visualisation_component(filtered_data, models):
     """
     Plots the graph for historical retraining information of models.
@@ -58,6 +59,8 @@ def historical_retraining_data_visualisation_component(filtered_data, models):
 
     fig = get_graph_for_summary_metric(filtered_data, freq, models, metrics)
     st.plotly_chart(fig, use_container_width=True)
+
+    return fig
 
 def user_feedback_component(recommended_item, model_list):
     """
@@ -86,3 +89,29 @@ def user_feedback_component(recommended_item, model_list):
                     st.success('Feedback submitted!')
                 else:
                     st.warning('Error submitting feedback!')
+
+def create_download_link(val, filename):
+    b64 = base64.b64encode(val)  # val looks like b'...'
+    return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download file</a>'
+
+def generate_pdf_component(filtered_data, model, fig):
+    form = st.form("Report Generator")
+    submit = form.form_submit_button("Generate Report")
+
+    if submit:
+        precision_metric = get_summary_metric_for_model(filtered_data, model, 'Precision')
+        recall_metric = get_summary_metric_for_model(filtered_data, model, 'Recall')
+        f1_metric = get_summary_metric_for_model(filtered_data, model, 'F1 Score')
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B",20)
+        pdf.cell(65, 10, txt=f'Precision: {str(precision_metric[0])}', align="C")
+        pdf.cell(65, 10, txt=f'Recall: {str(recall_metric[0])}', align='C')
+        pdf.cell(65, 10, txt=f'f1-score: {str(f1_metric[0])}', align='C')
+        pdf.ln()
+        with NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+            fig.write_image(tmpfile.name)
+            pdf.image(tmpfile.name, w=200, h=100)
+        html = create_download_link(pdf.output(dest="S").encode("latin-1"), "testfile")
+        st.markdown(html, unsafe_allow_html=True)
