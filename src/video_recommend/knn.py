@@ -23,7 +23,10 @@ CONN_PARAMS = {
 }
 
 def get_end_date(start_date: str) -> str:
-    start_datetime_object = datetime.strptime(start_date, '%Y-%m-%d')
+    if isinstance(start_date, str):
+        start_datetime_object = datetime.strptime(start_date, '%Y-%m-%d')
+    else:
+        start_datetime_object = start_date
     end_datetime_object = start_datetime_object + timedelta(days=3)
     end_date = end_datetime_object.strftime('%Y-%m-%d')
     return end_date
@@ -33,7 +36,7 @@ def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str
     test_data = data[(data[date_col] > start_date) & (data[date_col] <= get_end_date(start_date))]
     return train_data, test_data
 
-def create_embedding_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
+def create_embedding_matrices(user_interest_df: pd.DataFrame, season_df: pd.DataFrame, 
                               video_df: pd.DataFrame, vote_df: pd.DataFrame, date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # create the initial user interest matrix
     user_interest_train, _ = train_test_split_for_data(user_interest_df, 'updated_at', date)

@@ -3,43 +3,45 @@ import datetime
 import pandas as pd
 import plotly.express as px
 
-def load_data():
-    data = pd.read_feather('datasets/final/nus_knn_eval.feather')
-    data['dt'] = pd.to_datetime(data['dt'])
-    return data
-
 def get_summary_metric_for_model(data, model, metric):
-    model_data = data[data['model'] == model]
-    model_data_latest_metric = model_data.nlargest(1, 'dt').iloc[-1][metric].squeeze()
-    model_data_previous_metric = model_data.nlargest(2, 'dt').iloc[-1][metric].squeeze()
+    model_data = data[data["model"] == model]
+    model_data_latest_metric = model_data.nlargest(1, "dt").iloc[-1][metric].squeeze()
+    model_data_previous_metric = model_data.nlargest(2, "dt").iloc[-1][metric].squeeze()
 
     pct_improvement = (model_data_latest_metric - model_data_previous_metric) / model_data_previous_metric
 
     return [round(model_data_latest_metric, 2), f"{round(100 * pct_improvement, 0)}%"]
 
+def get_comparison_dates_for_summary_metrics(data, model):
+    model_data = data[data["model"] == model]
+    latest_date = model_data.nlargest(1, "dt").iloc[-1]["dt"]
+    second_latest_date = model_data.nlargest(2, "dt").iloc[-1]["dt"]
+
+    return latest_date, second_latest_date
+
 def filter_data(data, models):
-    mask = data['model'].isin(models)
+    mask = data["model"].isin(models)
 
     return data.copy()[mask]
 
 def get_chart_data_for_multiple_models(data, models, metrics):
-    new_df = pd.DataFrame(index=data['dt'].unique())
+    new_df = pd.DataFrame(index=data["dt"].unique())
     filtered_data = data.copy()
     for model in models:
-        suffix = f'_{model}'
-        model_data = filtered_data[filtered_data['model'] == model].set_index('dt')
+        suffix = f"_{model}"
+        model_data = filtered_data[filtered_data["model"] == model].set_index("dt")
         model_data = model_data[metrics]
         model_data.columns = [col + suffix for col in model_data.columns]
         new_df = pd.concat([new_df, model_data], axis=1)
 
     return new_df
 
-def get_graph_for_summary_metric(data, filtered_data, freq, models, metrics):
+def get_graph_for_summary_metric(filtered_data, freq, models, metrics):
     if len(models) == 1:
-        line_chart_data = filtered_data[metrics + ['dt']].set_index('dt')
+        line_chart_data = filtered_data[metrics + ["dt"]].set_index("dt")
         columns_to_plot = metrics
     else:
-        line_chart_data = get_chart_data_for_multiple_models(data, models, metrics)
+        line_chart_data = get_chart_data_for_multiple_models(filtered_data, models, metrics)
         columns_to_plot = line_chart_data.columns
 
     line_chart_data = line_chart_data.resample(freq).mean()

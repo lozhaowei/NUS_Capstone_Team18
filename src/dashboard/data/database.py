@@ -1,5 +1,6 @@
 import pymysql
 import pandas as pd
+import streamlit as st
 from decouple import config
 
 from src.data import database
@@ -32,6 +33,40 @@ def get_dashboard_data(entity):
 
     except Exception as e:
         print("Error:", e)
+
+@st.cache_data
+def get_data_for_real_time_section_videos(recommendation_table_name):
+    """
+    Queries database for latest 3 dates in the list of recommendations produced by the model, for use in the "Latest Model Metrics" section.
+    Args:
+    :param recommendation_table_name: Name of table in AWS database to query from. Table should contain the recommendations produced by the relevant model, 
+    together with the date it was produced at.
+    """
+    try:
+        recommendation_query = f"SELECT * FROM {recommendation_table_name} ORDER BY created_at DESC LIMIT 5000"
+        df = database.query_database(recommendation_query)
+        df["created_at"] = pd.to_datetime(df["created_at"])
+
+        video_query = "SELECT * FROM video"
+        video_df = database.query_database(video_query)
+        video_df["created_at"] = pd.to_datetime(video_df["created_at"]).dt.date
+
+        season_query = "SELECT * FROM season"
+        season_df = database.query_database(season_query)
+
+        vote_query = "SELECT * FROM vote"
+        vote_df = database.query_database(vote_query)
+        vote_df["timestamp"] = pd.to_datetime(vote_df["timestamp"]).dt.date
+
+        user_interest_query = "SELECT * FROM user_interest"
+        user_interest_df = database.query_database(user_interest_query)
+        user_interest_df["updated_at"] = pd.to_datetime(user_interest_df["updated_at"]).dt.date
+
+        return df, video_df, season_df, vote_df, user_interest_df
+    
+    except Exception as e:
+        print("Error, ", e)
+
 
 def insert_model_feedback(data):
     """
