@@ -12,10 +12,10 @@ CONN_PARAMS = {
     'database': config('DB_NAME'),
 }
 
+
 def get_dashboard_data(entity):
     """
-    queries database to obtain metrics data of specific model, renames the columns for frontend use,
-    then writes it as a feather file
+    queries database to obtain metrics data of specific model, renames the columns for frontend use
     :param entity: recommended item
     """
     try:
@@ -33,6 +33,7 @@ def get_dashboard_data(entity):
     except Exception as e:
         print("Error:", e)
 
+
 def insert_model_feedback(data):
     """
     only inserts one row at a time into nus_model_feedback table
@@ -40,7 +41,7 @@ def insert_model_feedback(data):
     :return: 0 if success, 1 if failed
     """
     if data is None:
-        log.error("Error getting feedback data")
+        print("Error getting feedback data")
         return 1
 
     if len(data['feedback']) > 500:
@@ -67,3 +68,31 @@ def insert_model_feedback(data):
     except Exception as e:
         print("Error:", e)
         return 1
+
+
+def get_model_ratings(recommended_item):
+    """
+    calculates the average rating for each model based on the recommended item
+    recommended item must follow the format: lowercase, singular
+    :param recommended_item: recommended item: video, conversation
+    :return: returns a dictionary: keys - model name, rating - average rating
+    """
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        query = f"SELECT model, FORMAT(AVG(rating), 2) FROM nus_model_feedback " \
+                f"WHERE recommended_item = %s" \
+                f"GROUP BY model;"
+
+        cursor.execute(query, recommended_item)
+        result = cursor.fetchall()
+
+        conn.close()
+
+        # return result example: (('knn', '4.25'), ('random_forest', '4.50'))
+        return {model: rating for (model, rating) in result}
+
+    except Exception as e:
+        print("Error:", e)
+        return -1

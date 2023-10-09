@@ -3,7 +3,7 @@ import streamlit as st
 from src.dashboard.data.data_handling import get_summary_metric_for_model, filter_data, \
     get_graph_for_summary_metric
 from src.dashboard.data.database import get_dashboard_data
-from src.dashboard.components import user_feedback_component
+from src.dashboard.components import user_feedback_component, model_rating_component
 
 st.set_page_config(layout="wide")
 
@@ -43,4 +43,5 @@ st.plotly_chart(fig, use_container_width=True)
 
 
 # user feedback
+model_rating_component('video')
 user_feedback_component('video', model_list)
