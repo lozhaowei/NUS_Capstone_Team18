@@ -30,4 +30,4 @@ historical_chart = historical_retraining_data_visualisation_component(filtered_d
 # user feedback
 user_feedback_component('video', model_list)
 
-generate_pdf_component(filtered_data, model_list[0], historical_chart)
+generate_pdf_component(filtered_data, models, historical_chart)

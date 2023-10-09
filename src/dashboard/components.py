@@ -94,22 +94,26 @@ def create_download_link(val, filename):
     b64 = base64.b64encode(val)  # val looks like b'...'
     return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download file</a>'
 
-def generate_pdf_component(filtered_data, model, fig):
+def generate_pdf_component(filtered_data, models, fig):
     form = st.form("Report Generator")
     submit = form.form_submit_button("Generate Report")
 
     if submit:
-        precision_metric = get_summary_metric_for_model(filtered_data, model, 'Precision')
-        recall_metric = get_summary_metric_for_model(filtered_data, model, 'Recall')
-        f1_metric = get_summary_metric_for_model(filtered_data, model, 'F1 Score')
-
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B",20)
-        pdf.cell(65, 10, txt=f'Precision: {str(precision_metric[0])}', align="C")
-        pdf.cell(65, 10, txt=f'Recall: {str(recall_metric[0])}', align='C')
-        pdf.cell(65, 10, txt=f'f1-score: {str(f1_metric[0])}', align='C')
-        pdf.ln()
+
+        for model in models:
+            precision_metric = get_summary_metric_for_model(filtered_data, model, 'Precision')
+            recall_metric = get_summary_metric_for_model(filtered_data, model, 'Recall')
+            f1_metric = get_summary_metric_for_model(filtered_data, model, 'F1 Score')
+            pdf.write(10, f'{model}')
+            pdf.ln()
+            pdf.cell(65, 10, txt=f'Precision: {str(precision_metric[0])}', align="C")
+            pdf.cell(65, 10, txt=f'Recall: {str(recall_metric[0])}', align='C')
+            pdf.cell(65, 10, txt=f'f1-score: {str(f1_metric[0])}', align='C')
+            pdf.ln(15)
+
         with NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
             fig.write_image(tmpfile.name)
             pdf.image(tmpfile.name, w=200, h=100)
