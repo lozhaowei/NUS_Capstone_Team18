@@ -2,35 +2,12 @@ import base64
 import streamlit as st
 from streamlit_star_rating import st_star_rating
 from fpdf import FPDF
-from src.data import database
-from src.video_recommend.knn import create_embedding_matrices
-from src.dashboard.data.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, get_graph_for_summary_metric
-from src.dashboard.data.database import get_data_for_real_time_section_videos, insert_model_feedback
 from tempfile import NamedTemporaryFile
 
-from src.dashboard.data.database import insert_model_feedback, get_model_ratings
-
-def model_rating_component(recommended_item):
-    """
-    Model Rating Component
-    :param recommended_item: item that the model recommended
-    """
-    st.subheader("Overall Model Rating")
-    model_ratings = get_model_ratings(recommended_item)
-
-    # maximum amount of columns per row
-    max_columns = 3
-    cols = st.columns(max_columns)
-    counter = 0
-
-    for k, v in model_ratings.items():
-        # wraps columns around
-        col = cols[counter % max_columns]
-        col.metric(k, v)
-        counter += 1
-
-    # add spacing
-    st.write("")
+from src.video_recommend.knn import create_embedding_matrices
+from src.dashboard.data.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
+    get_graph_for_summary_metric
+from src.dashboard.data.database import get_data_for_real_time_section_videos, insert_model_feedback, get_model_ratings
 
 def summary_metrics_component(filtered_data, models):
     """
@@ -84,6 +61,28 @@ def historical_retraining_data_visualisation_component(filtered_data, models):
     st.plotly_chart(fig, use_container_width=True)
 
     return fig
+
+def model_rating_component(recommended_item):
+    """
+    Model Rating Component
+    :param recommended_item: item that the model recommended
+    """
+    st.subheader("Overall Model Rating")
+    model_ratings = get_model_ratings(recommended_item)
+
+    # maximum amount of columns per row
+    max_columns = 3
+    cols = st.columns(max_columns)
+    counter = 0
+
+    for k, v in model_ratings.items():
+        # wraps columns around
+        col = cols[counter % max_columns]
+        col.metric(k, v)
+        counter += 1
+
+    # add spacing
+    st.write("")
 
 def user_feedback_component(recommended_item, model_list):
     """
