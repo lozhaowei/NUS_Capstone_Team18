@@ -106,6 +106,7 @@ def get_model_ratings(recommended_item):
     calculates the average rating for each model based on the recommended item
     :param recommended_item: recommended item: video, conversation, must follow the format: lowercase, singular
     :return: returns a dictionary: keys - model name, rating - average rating
+    if error fetching data, returns an empty dictionary
     """
     try:
         conn = pymysql.connect(**CONN_PARAMS)
@@ -125,4 +126,3 @@ def get_model_ratings(recommended_item):
 
     except Exception as e:
         print("Error:", e)
-        return -1
