@@ -5,26 +5,23 @@ from src.video_recommend.knn import run_knn_recommender,get_num_cycles
 from src.video_recommend.random_forest import run_model
 from src.conversation_recommend.cosine_similarity import run_collaborative_recommender
 from src.conversation_recommend.random_forest_convo import run_model_convo
-from src.video_recommend.neural_networks import run_model
 import schedule
 import time 
 conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
 
 
 def main():
-    # Step 1: pull data from database
-    pull_raw_data(['contest', 'conversation', 'conversation_feed', 'conversation_like',
-                    'conversation_reply', 'follow', 'post', 'post_feed', 'post_like', 'season',
-                    'user', 'user_interest', 'video', 'vote'])
+    # # Step 1: pull data from database
+    # pull_raw_data(['contest', 'conversation', 'conversation_feed', 'conversation_like',
+    #                 'conversation_reply', 'follow', 'post', 'post_feed', 'post_like', 'season',
+    #                 'user', 'user_interest', 'video', 'vote'])
 
-    # Step 2: Run the 3 models for Video Recommendations
-    knn_eval_video = run_knn_recommender('2023-07-01', 10, get_num_cycles('2023-07-01'))
-    print(knn_eval_video)
+    # # Step 2: Run the 3 models for Video Recommendations
+    # knn_eval_video = run_knn_recommender('2023-07-01', 10, get_num_cycles('2023-07-01'))
+    # print(knn_eval_video)
 
     random_forest_eval_video = run_model()
     print(random_forest_eval_video)
-
-    run_model('2023-08-01')
 
     # Step 3: Combine the 3 evaluation tables into 1 mega table
     combine_tables_video()
@@ -48,7 +45,7 @@ def main():
     # get_dashboard_data()
 
 if __name__ == "__main__":
-    schedule.every().day.at("21:22").do(main)
+    schedule.every().day.at("01:54").do(main)
 
 while True:
     schedule.run_pending()
