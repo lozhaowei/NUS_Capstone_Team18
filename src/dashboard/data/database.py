@@ -13,7 +13,6 @@ CONN_PARAMS = {
     'database': config('DB_NAME'),
 }
 
-
 def get_dashboard_data(entity):
     """
     queries database to obtain metrics data of specific model, renames the columns for frontend use
@@ -67,7 +66,6 @@ def get_data_for_real_time_section_videos(recommendation_table_name):
     except Exception as e:
         print("Error, ", e)
 
-
 def insert_model_feedback(data):
     """
     only inserts one row at a time into nus_model_feedback table
@@ -103,12 +101,10 @@ def insert_model_feedback(data):
         print("Error:", e)
         return 1
 
-
 def get_model_ratings(recommended_item):
     """
     calculates the average rating for each model based on the recommended item
-    recommended item must follow the format: lowercase, singular
-    :param recommended_item: recommended item: video, conversation
+    :param recommended_item: recommended item: video, conversation, must follow the format: lowercase, singular
     :return: returns a dictionary: keys - model name, rating - average rating
     """
     try:
