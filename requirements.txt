@@ -8,5 +8,5 @@ pytz==2023.3.post1
 setuptools==58.1.0
 six==1.16.0
 tzdata==2023.3
-
+schedule==1.2.1
 streamlit==1.26.0

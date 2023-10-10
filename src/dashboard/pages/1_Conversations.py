@@ -20,10 +20,12 @@ metrics_data = pd.DataFrame({
         'dt': ['2023-09-23', '2023-09-24', '2023-09-25']
     })
 
-
 if st.checkbox('Show metrics results'):
     st.write('Metrics Data')
     metrics_data
 
 st.subheader('Line chart')
 st.line_chart(metrics_data, x='dt')
+
+
+

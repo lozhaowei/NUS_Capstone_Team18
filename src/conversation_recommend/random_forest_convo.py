@@ -34,7 +34,7 @@ def generate_random_data(start_date, end_date):
 
     return data
 
-def run_model():
+def run_model_convo():
     start_date = datetime(2023, 7, 1)
     end_date = datetime.now()
     num_cycles = (end_date - start_date).days + 1
@@ -48,5 +48,4 @@ def run_model():
     model_statistics = pd.DataFrame(data, columns=columns)
 
     model_statistics['model'] = 'random_forest'
-    model_statistics.to_csv('datasets/final/random_forest_video.csv', index=False)
-
+    model_statistics.to_csv('datasets/final/random_forest_convo.csv', index=False)
