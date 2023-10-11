@@ -21,7 +21,7 @@ summary_metrics_component(filtered_data, models)
 
 st.divider()
 
-# real_time_data_visualisation_component()
+real_time_data_visualisation_component()
 
 st.divider()
 

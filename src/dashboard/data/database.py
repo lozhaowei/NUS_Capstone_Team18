@@ -34,7 +34,7 @@ def get_dashboard_data(entity):
         print("Error:", e)
 
 @st.cache_data
-def get_data_for_real_time_section_videos(recommendation_table_name):
+def get_upvote_percentage_for_user(recommendation_table_name):
     """
     Queries database for latest 3 dates in the list of recommendations produced by the model, for use in the "Latest Model Metrics" section.
     Args:
@@ -42,27 +42,115 @@ def get_data_for_real_time_section_videos(recommendation_table_name):
     together with the date it was produced at.
     """
     try:
-        recommendation_query = f"SELECT * FROM {recommendation_table_name} ORDER BY created_at DESC LIMIT 5000"
-        df = database.query_database(recommendation_query)
-        df["created_at"] = pd.to_datetime(df["created_at"])
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
 
-        video_query = "SELECT * FROM video"
-        video_df = database.query_database(video_query)
-        video_df["created_at"] = pd.to_datetime(video_df["created_at"]).dt.date
+        query = """
+        SELECT user_id, SUM(upvote_count) as upvoted_videos, COUNT(upvote_count) as number_recommended, SUM(upvote_count) / COUNT(upvote_count) as upvote_percentage
+        FROM (
+            SELECT *,
+                CASE
+                    WHEN t1.timestamp > t1.created_at THEN 1
+                    ELSE 0
+                    END AS upvote_count
+            FROM (
+                SELECT rdv.user_id, rdv.recommended_video_id, v.video_id, v.status, rdv.created_at, v.timestamp
+                FROM rs_daily_video_for_user rdv
+                        LEFT JOIN vote v
+                                    ON rdv.recommended_video_id = v.video_id
+                                        AND rdv.user_id = v.voter_id) t1
+                    WHERE DATE(t1.created_at) = '2023-09-05' AND DATE(t1.timestamp) = '2023-09-05'
+            ) t2 
+            GROUP BY user_id
+            ORDER BY upvote_percentage DESC;
+        """
 
-        season_query = "SELECT * FROM season"
-        season_df = database.query_database(season_query)
+        cursor.execute(query)
+        result = cursor.fetchall()
+        df = pd.DataFrame(result, columns=[i[0] for i in cursor.description]).set_index("user_id")
 
-        vote_query = "SELECT * FROM vote"
-        vote_df = database.query_database(vote_query)
-        vote_df["timestamp"] = pd.to_datetime(vote_df["timestamp"]).dt.date
+        return df
 
-        user_interest_query = "SELECT * FROM user_interest"
-        user_interest_df = database.query_database(user_interest_query)
-        user_interest_df["updated_at"] = pd.to_datetime(user_interest_df["updated_at"]).dt.date
+    except Exception as e:
+        print("Error, ", e)
 
-        return df, video_df, season_df, vote_df, user_interest_df
+def get_individual_user_visualisation(user_id):
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
 
+        query = f"""
+        SELECT
+            voter_id,
+            SUM(CASE WHEN category = 'OTHERS' THEN 1 ELSE 0 END) AS Others,
+            SUM(CASE WHEN category = 'DANCE' THEN 1 ELSE 0 END) AS Dance,
+            SUM(CASE WHEN category = 'ART&DESIGN' THEN 1 ELSE 0 END) AS ArtandDesign,
+            SUM(CASE WHEN category = 'STYLE&BEAUTY' THEN 1 ELSE 0 END) AS StyleandBeauty,
+            SUM(CASE WHEN category = 'MUSIC' THEN 1 ELSE 0 END) AS Music,
+            SUM(CASE WHEN category = 'COMEDY' THEN 1 ELSE 0 END) AS Comedy,
+            SUM(CASE WHEN category = 'LIFESTYLE' THEN 1 ELSE 0 END) AS Lifestyle,
+            SUM(CASE WHEN category = 'FOOD&DRINKS' THEN 1 ELSE 0 END) AS FoodandDrinks,
+            SUM(CASE WHEN category = 'SPORTS&FITNESS' THEN 1 ELSE 0 END) AS SportsandFitness,
+            SUM(CASE WHEN category = 'GAMING' THEN 1 ELSE 0 END) AS Gaming,
+            SUM(CASE WHEN category = 'NFT' THEN 1 ELSE 0 END) AS NFT,
+            SUM(CASE WHEN category = 'HACKS&PRODUCTIVITY' THEN 1 ELSE 0 END) AS HacksandProductivity
+        FROM
+            (SELECT v.voter_id, s.category 
+            FROM vote v
+            LEFT JOIN season s
+            ON v.season_id = s.id) AS subquery
+        GROUP BY voter_id
+        HAVING voter_id = '{user_id}'
+        """
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+        df = pd.DataFrame(result, columns=[i[0] for i in cursor.description])
+
+        return df
+    
+    except Exception as e:
+        print("Error, ", e)
+
+def get_recommended_video_info(user_id):
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        query = f"""
+        SELECT 
+            user_id,
+            SUM(CASE WHEN category = 'OTHERS' THEN 1 ELSE 0 END) AS Others,
+            SUM(CASE WHEN category = 'DANCE' THEN 1 ELSE 0 END) AS Dance,
+            SUM(CASE WHEN category = 'ART&DESIGN' THEN 1 ELSE 0 END) AS ArtandDesign,
+            SUM(CASE WHEN category = 'STYLE&BEAUTY' THEN 1 ELSE 0 END) AS StyleandBeauty,
+            SUM(CASE WHEN category = 'MUSIC' THEN 1 ELSE 0 END) AS Music,
+            SUM(CASE WHEN category = 'COMEDY' THEN 1 ELSE 0 END) AS Comedy,
+            SUM(CASE WHEN category = 'LIFESTYLE' THEN 1 ELSE 0 END) AS Lifestyle,
+            SUM(CASE WHEN category = 'FOOD&DRINKS' THEN 1 ELSE 0 END) AS FoodandDrinks,
+            SUM(CASE WHEN category = 'SPORTS&FITNESS' THEN 1 ELSE 0 END) AS SportsandFitness,
+            SUM(CASE WHEN category = 'GAMING' THEN 1 ELSE 0 END) AS Gaming,
+            SUM(CASE WHEN category = 'NFT' THEN 1 ELSE 0 END) AS NFT,
+            SUM(CASE WHEN category = 'HACKS&PRODUCTIVITY' THEN 1 ELSE 0 END) AS HacksandProductivity
+        FROM (
+            SELECT rdv.user_id, rdv.recommended_video_id, v.season_id, s.category
+            FROM (
+                rs_daily_video_for_user rdv 
+                LEFT JOIN video v ON rdv.recommended_video_id = v.id
+                LEFT JOIN season s ON v.season_id = s.id
+            )
+            WHERE DATE(rdv.created_at) = '2023-09-05'
+        ) t1
+        GROUP BY user_id
+        HAVING user_id = '{user_id}';
+        """
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+        df = pd.DataFrame(result, columns=[i[0] for i in cursor.description])
+
+        return df
+    
     except Exception as e:
         print("Error, ", e)
 
