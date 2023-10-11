@@ -10,6 +10,8 @@ from src.data.database import CONN_PARAMS, insert_data
 import pymysql
 import pandas as pd
 from decouple import config
+from sklearn.decomposition import TruncatedSVD
+
 
 
 warnings.filterwarnings('ignore')
@@ -71,16 +73,32 @@ def create_embedding_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFr
 
     return user_interest_matrix, video_category_matrix
 
-def similarity(user_id, video_id, user_interest_matrix, video_category_matrix):
-    user = user_interest_matrix.loc[user_id]
-    video = video_category_matrix.loc[video_id]
-    category_distance = spatial.distance.cosine(user, video)
+def svd_decomposition(user_interest_matrix, video_category_matrix, n_components=10):
+    # Apply matrix factorization (SVD)
+    svd = TruncatedSVD(n_components=n_components)  # You can adjust the number of components
+    user_factors = svd.fit_transform(user_interest_matrix)
+    video_factors = svd.fit_transform(video_category_matrix)
+    return user_factors, video_factors
 
-    return category_distance
+def svd_similarity(user_id, video_id, user_features, video_features):
+    # Apply matrix factorization (SVD) similarity function 
+    user_features_vector = user_features.loc[user_id].values
+    video_features_vector = video_features.loc[video_id].values
+    distance = np.linalg.norm(user_features_vector - video_features_vector)
+
+    similarity_score = 1 / (1 + distance)
+    return similarity_score
+
+def find_top_videos(user_id, k, user_interest_matrix, video_category_matrix):
+    similarity_matrix = svd_similarity(user_interest_matrix, video_category_matrix)
+    user_index = user_interest_matrix.index.get_loc(user_id)
+    similarities = similarity_matrix[user_index]
+    top_k_indices = np.argsort(-similarities)[:k]
+    return top_k_indices
 
 def find_top_k_videos(user_id, k, user_interest_matrix, video_category_matrix):
     recommendations = pd.DataFrame(index=video_category_matrix.index)
-    recommendations['similarity'] = recommendations.index.map(lambda x: similarity(user_id, x, user_interest_matrix, video_category_matrix))
+    recommendations['similarity'] = recommendations.index.map(lambda x: svd_similarity(user_id, x, user_interest_matrix, video_category_matrix))
     return recommendations.nsmallest(k, 'similarity')
 
 def hit_ratio_at_k(y_true, y_pred, K):
@@ -131,7 +149,7 @@ def get_summary_statistics(vote_df, user_interest_matrix, video_category_matrix,
 
     return model_statistics     
 
-def run_knn_recommender(date, K, num_cycles):
+def run_svd_recommender(date, K, num_cycles):
     user_interest_df = pd.read_feather('datasets/raw/user_interest.feather')
     user_df = pd.read_feather('datasets/raw/user.feather')
     season_df = pd.read_feather('datasets/raw/season.feather')
@@ -145,8 +163,11 @@ def run_knn_recommender(date, K, num_cycles):
         model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
         date = get_end_date(date)
 
-    model_statistics['model'] = 'knn'
-    model_statistics.to_csv('datasets/final/knn_video.csv', index=False)
+    model_statistics['model'] = 'svd'
+    model_statistics.to_csv('datasets/final/svd_video.csv', index=False)
+
+
+
 
 
 
