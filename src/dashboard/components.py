@@ -144,19 +144,31 @@ def generate_pdf_component(filtered_data, models, fig):
     if submit:
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("Arial", "B",20)
+        pdf.set_title("Recommender Systems Dashboard")
+        pdf.set_font("Arial", "B", 20)
+        pdf.write(10, "Summary Metrics")
+        pdf.ln()
 
-        for model in models:
-            precision_metric = get_summary_metric_for_model(filtered_data, model, 'Precision')
-            recall_metric = get_summary_metric_for_model(filtered_data, model, 'Recall')
-            f1_metric = get_summary_metric_for_model(filtered_data, model, 'F1 Score')
-            pdf.write(10, f'{model}')
+        pdf.set_font("Arial", "", 16)
+        for i in range(len(models)):
+            precision_metric = get_summary_metric_for_model(filtered_data, models[i], 'Precision')
+            recall_metric = get_summary_metric_for_model(filtered_data, models[i], 'Recall')
+            f1_metric = get_summary_metric_for_model(filtered_data, models[i], 'F1 Score')
+            pdf.write(10, f'{models[i]}:')
             pdf.ln()
             pdf.cell(65, 10, txt=f'Precision: {str(precision_metric[0])}', align="C")
             pdf.cell(65, 10, txt=f'Recall: {str(recall_metric[0])}', align='C')
             pdf.cell(65, 10, txt=f'f1-score: {str(f1_metric[0])}', align='C')
+            pdf.ln()
+            pdf.set_font("Arial", "", 8)
+            latest_date, second_latest_date = get_comparison_dates_for_summary_metrics(filtered_data, models[i])
+            pdf.write(5, f"(Summary metrics shown are as of **{latest_date.date()}** and change in metrics is compared to **{second_latest_date.date()}**)")
             pdf.ln(15)
 
+        pdf.set_font("Arial", "B", 20)
+        pdf.write(10, "Summary Metrics in Historical Retraining")    
+        pdf.ln()
+        pdf.set_font("Arial", "", 16)      
         with NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
             fig.write_image(tmpfile.name)
             pdf.image(tmpfile.name, w=200, h=100)

@@ -71,7 +71,7 @@ def insert_data(table_name, data):
 def combine_tables_video():
     table1 = pd.read_csv('datasets/final/random_forest_video.csv')
     table2 = pd.read_csv('datasets/final/knn_video.csv')
-    table3 = pd.read_csv('datasets/final/neural_networks_video.csv')
+    table3 = pd.read_csv('datasets/final/svd_video.csv')
 
     # Combine tables
     combined_table = pd.concat([table1, table2, table3], ignore_index=True)
