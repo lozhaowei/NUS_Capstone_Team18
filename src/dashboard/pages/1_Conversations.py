@@ -1,31 +1,30 @@
 import streamlit as st
-import pandas as pd
 
+from src.dashboard.data.data_handling import filter_data
+from src.dashboard.data.database import get_dashboard_data
+from src.dashboard.components import summary_metrics_component, historical_retraining_data_visualisation_component, \
+    user_feedback_component, model_rating_component, generate_pdf_component
 
 st.set_page_config(layout="wide")
-st.title("Conversations")
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Precision", "50%", "3%")
-col2.metric("Recall", "50%", "-8%")
-col3.metric("F1 Score", "30%", "4%")
+data = get_dashboard_data("convo").reset_index(drop=True)
+model_list = data['model'].unique()
+
+col1, col2 = st.columns([0.7, 0.3])
+col1.title('Conversations')
+models = col2.multiselect('Model', options=model_list, default=model_list[0])
+filtered_data = filter_data(data, models)
 
 st.divider()
 
-# Replace with data pulled from database
-metrics_data = pd.DataFrame({
-        'precision': [0.3, 0.4, 0.5],
-        'recall': [0.3, 0.5, 0.1],
-        'f1 score': [0.3, 0.3, 0.3],
-        'dt': ['2023-09-23', '2023-09-24', '2023-09-25']
-    })
+summary_metrics_component(filtered_data, models)
 
-if st.checkbox('Show metrics results'):
-    st.write('Metrics Data')
-    metrics_data
+st.divider()
 
-st.subheader('Line chart')
-st.line_chart(metrics_data, x='dt')
+historical_chart = historical_retraining_data_visualisation_component(filtered_data, models)
 
+# user feedback
+model_rating_component('video')
+user_feedback_component('video', model_list)
 
-
+generate_pdf_component(filtered_data, models, historical_chart)

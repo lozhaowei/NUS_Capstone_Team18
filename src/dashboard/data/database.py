@@ -34,6 +34,28 @@ def get_dashboard_data(entity):
         print("Error:", e)
 
 @st.cache_data
+def get_latest_dates_in_recommendation_table():
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        query = f"""
+        SELECT DISTINCT DATE(created_at) as dates
+        FROM rs_daily_video_for_user
+        ORDER BY DATE(created_at) DESC
+        LIMIT 3;
+        """
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+        df = pd.DataFrame(result, columns=[i[0] for i in cursor.description])
+
+        return df
+
+    except Exception as e:
+        print("Error, ", e)
+
+@st.cache_data
 def get_upvote_percentage_for_user(recommendation_table_name, dt):
     """
     Queries database for latest 3 dates in the list of recommendations produced by the model,
@@ -78,6 +100,7 @@ def get_upvote_percentage_for_user(recommendation_table_name, dt):
     except Exception as e:
         print("Error, ", e)
 
+@st.cache_data
 def get_individual_user_visualisation(user_id):
     try:
         conn = pymysql.connect(**CONN_PARAMS)
@@ -102,20 +125,26 @@ def get_individual_user_visualisation(user_id):
             (SELECT v.voter_id, s.category 
             FROM vote v
             LEFT JOIN season s
-            ON v.season_id = s.id) AS subquery
+            ON v.season_id = s.id
+            WHERE v.voter_id = '{user_id}') AS subquery
         GROUP BY voter_id
-        HAVING voter_id = '{user_id}'
         """
 
         cursor.execute(query)
         result = cursor.fetchall()
         df = pd.DataFrame(result, columns=[i[0] for i in cursor.description])
 
+        if len(df) == 0:
+            df = pd.DataFrame(columns=["voter_id", "Others", "Dance", "ArtandDesign", "StyleandBeauty", "Music", "Comedy",
+                                       "Lifestyle", "FoodandDrinks", "SportsandFitness", "Gaming", "NFT", "HacksandProductivity"])
+            df.loc[len(df)] = [user_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
         return df
     
     except Exception as e:
         print("Error, ", e)
 
+@st.cache_data
 def get_recommended_video_info(user_id):
     try:
         conn = pymysql.connect(**CONN_PARAMS)
@@ -137,16 +166,15 @@ def get_recommended_video_info(user_id):
             SUM(CASE WHEN category = 'NFT' THEN 1 ELSE 0 END) AS NFT,
             SUM(CASE WHEN category = 'HACKS&PRODUCTIVITY' THEN 1 ELSE 0 END) AS HacksandProductivity
         FROM (
-            SELECT rdv.user_id, rdv.recommended_video_id, v.season_id, s.category
+            SELECT rdv.user_id, s.category
             FROM (
                 rs_daily_video_for_user rdv 
                 LEFT JOIN video v ON rdv.recommended_video_id = v.id
                 LEFT JOIN season s ON v.season_id = s.id
             )
-            WHERE DATE(rdv.created_at) = '2023-09-05'
+            WHERE DATE(rdv.created_at) = '2023-09-05' AND rdv.user_id = '{user_id}'
         ) t1
-        GROUP BY user_id
-        HAVING user_id = '{user_id}';
+        GROUP BY user_id;
         """
 
         cursor.execute(query)
