@@ -32,35 +32,42 @@ def summary_metrics_component(filtered_data, models):
         st.markdown(f"Summary metrics shown are as of **{latest_date.date()}** and change in metrics is compared to **{second_latest_date.date()}**.")
 
 def real_time_data_visualisation_component():
-    data = get_upvote_percentage_for_user("rs_daily_video_for_user")
+    try:
+        data = get_upvote_percentage_for_user('rs_daily_video_for_user', '2023-09-05')
 
-    col1, col2 = st.columns([0.9, 0.1])
-    col1.subheader("Latest Model Metrics")
-    date = col2.selectbox("Select Date", ["2023-09-05"])
-    # filtered_data = data[data["created_at"].dt.date == date]
-    st.caption("Summary metrics are still subject to double-checking.")
+        col1, col2 = st.columns([0.9, 0.1])
+        col1.subheader("Latest Model Metrics")
+        date = col2.selectbox("Select Date", ["2023-09-05"])
+        # filtered_data = data[data["created_at"].dt.date == date]
 
-    col1, col2 = st.columns(2)
-    col1.metric("Average Upvoted Percentage", format(data["upvote_percentage"].mean(), ".1%"))
-    col2.metric("Average Videos Recommended", format(data["number_recommended"].mean(), ".1f"))
+        col1, col2 = st.columns(2)
+        col1.metric("Average Upvoted Percentage", format(data["upvote_percentage"].mean(), ".1%"))
+        col2.metric("Average Videos Recommended", format(data["number_recommended"].mean(), ".1f"))
 
-    col1, col2 = st.columns([0.75, 0.25])
-    col1.subheader("Individual User Visualisation")
-    user = col2.selectbox("Select User", data.index.unique())
-    st.caption("The radar charts allow the user to visualise the profile of the user's interest (on the left) and the profile of the videos suggested by the recommender to that specific user.")
-    user_data = get_individual_user_visualisation(user).drop(["voter_id"], axis=1)
-    video_data = get_recommended_video_info(user).drop(["user_id"], axis=1)
+        col1, col2 = st.columns([0.75, 0.25])
+        col1.subheader("Individual User Visualisation")
+        user = col2.selectbox("Select User", data.index.unique())
+        st.caption("The radar charts allow the user to visualise the profile of the user's interest (on the left) "
+                   "and the profile of the videos suggested by the recommender to that specific user.")
 
-    col1, col2 = st.columns(2)
-    user_fig = go.Figure()
-    user_fig.add_trace(go.Scatterpolar(r=user_data.loc[0], theta=user_data.loc[0].index, fill="toself", name="User"))
-    user_fig.update_layout(showlegend=True)
-    col1.plotly_chart(user_fig)
+        user_data = get_individual_user_visualisation(user).drop(["voter_id"], axis=1)
+        video_data = get_recommended_video_info(user).drop(["user_id"], axis=1)
 
-    video_fig = go.Figure()
-    video_fig.add_trace(go.Scatterpolar(r=video_data.loc[0], theta=video_data.loc[0].index, fill="toself", fillcolor="rgba(190, 233, 232)", name="Recommender"))
-    video_fig.update_layout(showlegend=True)
-    col2.plotly_chart(video_fig, user_container_width=True)
+        col1, col2 = st.columns(2)
+        user_fig = go.Figure()
+        user_fig.add_trace(
+            go.Scatterpolar(r=user_data.loc[0], theta=user_data.loc[0].index, fill="toself", name="User"))
+        user_fig.update_layout(showlegend=True)
+        col1.plotly_chart(user_fig)
+
+        video_fig = go.Figure()
+        video_fig.add_trace(go.Scatterpolar(r=video_data.loc[0], theta=video_data.loc[0].index, fill="toself",
+                                            fillcolor="rgba(190, 233, 232)", name="Recommender"))
+        video_fig.update_layout(showlegend=True)
+        col2.plotly_chart(video_fig, user_container_width=True)
+
+    except Exception as e:
+        print("Error displaying realtime data visualisation component:", e)
 
 def historical_retraining_data_visualisation_component(filtered_data, models):
     """
