@@ -9,8 +9,8 @@ from tempfile import NamedTemporaryFile
 from src.video_recommend.knn import create_embedding_matrices
 from src.dashboard.data.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
     get_graph_for_summary_metric
-from src.dashboard.data.database import get_upvote_percentage_for_user, get_individual_user_visualisation, get_recommended_video_info, \
-      insert_model_feedback, get_model_ratings
+from src.dashboard.data.database import get_latest_dates_in_recommendation_table, get_upvote_percentage_for_user, get_individual_user_visualisation, \
+    get_recommended_video_info, insert_model_feedback, get_model_ratings
 
 def summary_metrics_component(filtered_data, models):
     """
@@ -33,12 +33,12 @@ def summary_metrics_component(filtered_data, models):
 
 def real_time_data_visualisation_component():
     try:
-        data = get_upvote_percentage_for_user('rs_daily_video_for_user', '2023-09-05')
+        dates = get_latest_dates_in_recommendation_table()
 
         col1, col2 = st.columns([0.9, 0.1])
         col1.subheader("Latest Model Metrics")
-        date = col2.selectbox("Select Date", ["2023-09-05"])
-        # filtered_data = data[data["created_at"].dt.date == date]
+        date = col2.selectbox("Select Date", dates["dates"].unique())
+        data = get_upvote_percentage_for_user('rs_daily_video_for_user', date)
 
         col1, col2 = st.columns(2)
         col1.metric("Average Upvoted Percentage", format(data["upvote_percentage"].mean(), ".1%"))
