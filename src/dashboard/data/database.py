@@ -87,7 +87,7 @@ def get_upvote_percentage_for_user(recommendation_table_name, dt):
                                         AND rdv.user_id = v.voter_id) t1
                     WHERE DATE(t1.rdv_created_at) = '{dt}'
             ) t2
-            GROUP BY user_id, recommendation_id
+            GROUP BY user_id
             ORDER BY upvote_percentage DESC;
         """
 
