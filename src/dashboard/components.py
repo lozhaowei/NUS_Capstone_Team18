@@ -65,6 +65,7 @@ def real_time_data_visualisation_component():
                                             fillcolor="rgba(190, 233, 232)", name="Recommender"))
         video_fig.update_layout(showlegend=True)
         col2.plotly_chart(video_fig, user_container_width=True)
+        st.markdown(f"User **{user}** has an upvote percentage of **{format(data.loc[user, 'upvote_percentage'], '.1%')}** and was recommended **{data.loc[user, 'number_recommended']}** videos.")
 
     except Exception as e:
         print("Error displaying realtime data visualisation component:", e)
