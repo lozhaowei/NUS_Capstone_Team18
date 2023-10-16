@@ -78,7 +78,7 @@ def historical_retraining_data_visualisation_component(filtered_data, models):
     """
     if st.checkbox('Show metrics results'):
         st.write('Metrics Data')
-        filtered_data
+        st.write(filtered_data)
 
     col1, col2, col3 = st.columns([0.5, 0.25, 0.25])
     col1.subheader('Summary Metrics in Historical Retraining')
@@ -157,11 +157,11 @@ def generate_pdf_component(filtered_data, models, fig):
         pdf.write(10, "Summary Metrics")
         pdf.ln()
 
-        pdf.set_font("Arial", "", 16)
         for i in range(len(models)):
             precision_metric = get_summary_metric_for_model(filtered_data, models[i], 'Precision')
             recall_metric = get_summary_metric_for_model(filtered_data, models[i], 'Recall')
             f1_metric = get_summary_metric_for_model(filtered_data, models[i], 'F1 Score')
+            pdf.set_font("Arial", "", 16)
             pdf.write(10, f'{models[i]}:')
             pdf.ln()
             pdf.cell(65, 10, txt=f'Precision: {str(precision_metric[0])}', align="C")
