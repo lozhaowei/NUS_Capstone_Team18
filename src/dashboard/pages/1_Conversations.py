@@ -6,25 +6,36 @@ from src.dashboard.components import summary_metrics_component, historical_retra
     user_feedback_component, model_rating_component, generate_pdf_component
 
 st.set_page_config(layout="wide")
+if (
+    st.session_state["authenticated"]
+    and "Admin" in st.session_state["user_cognito_groups"]
+):
+    data = get_dashboard_data("convo").reset_index(drop=True)
+    model_list = data['model'].unique()
 
-data = get_dashboard_data("convo").reset_index(drop=True)
-model_list = data['model'].unique()
+    col1, col2 = st.columns([0.7, 0.3])
+    col1.title('Conversations')
+    models = col2.multiselect('Model', options=model_list, default=model_list[0])
+    filtered_data = filter_data(data, models)
 
-col1, col2 = st.columns([0.7, 0.3])
-col1.title('Conversations')
-models = col2.multiselect('Model', options=model_list, default=model_list[0])
-filtered_data = filter_data(data, models)
+    st.divider()
 
-st.divider()
+    summary_metrics_component(filtered_data, models)
 
-summary_metrics_component(filtered_data, models)
+    st.divider()
 
-st.divider()
+    historical_chart = historical_retraining_data_visualisation_component(filtered_data, models)
 
-historical_chart = historical_retraining_data_visualisation_component(filtered_data, models)
+    # user feedback
+    model_rating_component('video')
+    user_feedback_component('video', model_list)
 
-# user feedback
-model_rating_component('video')
-user_feedback_component('video', model_list)
+    generate_pdf_component(filtered_data, models, historical_chart)
 
-generate_pdf_component(filtered_data, models, historical_chart)
+else:
+    if st.session_state["authenticated"]:
+        st.write("You do not have access. Please contact the administrator.")
+    else:
+        st.write("Please login!")
+
+

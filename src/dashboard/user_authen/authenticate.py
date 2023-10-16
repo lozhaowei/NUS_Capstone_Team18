@@ -141,7 +141,11 @@ def get_user_cognito_groups(id_token):
         header, payload, signature = id_token.split(".")
         printable_payload = base64.urlsafe_b64decode(pad_base64(payload))
         payload_dict = json.loads(printable_payload)
-        user_cognito_groups = list(dict(payload_dict)["cognito:groups"])
+        #print(dict(payload_dict))
+        if "cognito:groups" in dict(payload_dict):            
+            user_cognito_groups = list(dict(payload_dict)["cognito:groups"])
+        else:
+            user_cognito_groups = []
     else:
         user_cognito_groups = []
     return user_cognito_groups
