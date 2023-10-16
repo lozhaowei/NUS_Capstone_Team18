@@ -46,7 +46,7 @@ def main():
     # get_dashboard_data()
 
 if __name__ == "__main__":
-    schedule.every().day.at("16:12").do(main)
+    schedule.every().day.at("22:49").do(main)
 
 while True:
     schedule.run_pending()

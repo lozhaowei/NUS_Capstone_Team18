@@ -12,8 +12,6 @@ import pandas as pd
 from decouple import config
 from sklearn.decomposition import TruncatedSVD
 
-
-
 warnings.filterwarnings('ignore')
 
 CONN_PARAMS = {
@@ -73,14 +71,14 @@ def create_embedding_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFr
 
     return user_interest_matrix, video_category_matrix
 
-def svd_decomposition(user_interest_matrix, video_category_matrix, n_components=10):
-    # Apply matrix factorization (SVD)
-    svd = TruncatedSVD(n_components=n_components)  # You can adjust the number of components
-    user_factors = svd.fit_transform(user_interest_matrix)
-    video_factors = svd.fit_transform(video_category_matrix)
-    return user_factors, video_factors
-
 def svd_similarity(user_id, video_id, user_features, video_features):
+    # Apply matrix factorization (SVD) similarity function 
+    user_features_vector = user_features.loc[user_id].values
+    video_features_vector = video_features.loc[video_id].values
+    similarity_score = np.dot(user_features_vector, video_features_vector)
+    return similarity_score
+
+def svd_similarity_2(user_id, video_id, user_features, video_features):
     # Apply matrix factorization (SVD) similarity function 
     user_features_vector = user_features.loc[user_id].values
     video_features_vector = video_features.loc[video_id].values
