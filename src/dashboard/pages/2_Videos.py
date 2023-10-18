@@ -11,31 +11,37 @@ if (
     st.session_state["authenticated"]
     and "Admin" in st.session_state["user_cognito_groups"]
 ):
-      data = get_dashboard_data("video").reset_index(drop=True)
-      model_list = data['model'].unique()
+    data = get_dashboard_data("video").reset_index(drop=True)
+    model_list = data['model'].unique()
 
-      col1, col2 = st.columns([0.7, 0.3])
-      col1.title('Videos')
-      models = col2.multiselect('Model', options=model_list, default=model_list[0])
-      filtered_data = filter_data(data, models)
+    col1, col2 = st.columns([0.7, 0.3])
+    col1.title('Videos')
+    models = col2.multiselect('Model', options=model_list, default=model_list[0])
+    filtered_data = filter_data(data, models)
 
-      st.divider()
+    elements = st.multiselect("Choose the elements that you want to show",
+                            options=["Summary Metrics", "Real Time Data", "Historical Chart", "User Feedback"])
 
-      summary_metrics_component(filtered_data, models)
+    st.divider()
 
-      st.divider()
+    if "Summary Metrics" in elements:
+        summary_metrics_component(filtered_data, models)
+        st.divider()
 
-      real_time_data_visualisation_component()
+    if "Real Time Data" in elements:
+        real_time_data_visualisation_component()
+        st.divider()
 
-      st.divider()
+    if "Historical Chart" in elements:
+        historical_chart = historical_retraining_data_visualisation_component(filtered_data, models)
+        st.divider()
 
-      historical_chart = historical_retraining_data_visualisation_component(filtered_data, models)
+    # user feedback
+    if "User Feedback" in elements:
+        model_rating_component('video')
+        user_feedback_component('video', model_list)
 
-      # user feedback
-      model_rating_component('video')
-      user_feedback_component('video', model_list)
-
-      generate_pdf_component(filtered_data, models, historical_chart)
+    # generate_pdf_component(filtered_data, models, historical_chart)
 
 
 else:

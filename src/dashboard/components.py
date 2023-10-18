@@ -6,7 +6,7 @@ from streamlit_star_rating import st_star_rating
 from fpdf import FPDF
 from tempfile import NamedTemporaryFile
 
-from src.video_recommend.knn import create_embedding_matrices
+# from src.video_recommend.knn import create_embedding_matrices
 from src.dashboard.data.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
     get_graph_for_summary_metric
 from src.dashboard.data.database import get_latest_dates_in_recommendation_table, get_upvote_percentage_for_user, get_individual_user_visualisation, \
