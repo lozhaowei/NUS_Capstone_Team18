@@ -13,6 +13,11 @@ CONN_PARAMS = {
     'database': config('DB_NAME'),
 }
 
+@st.cache_resource
+def connect_database(**CONN_PARAMS):
+    return pymysql.connect(**CONN_PARAMS)
+
+
 def get_dashboard_data(entity):
     """
     queries database to obtain metrics data of specific model, renames the columns for frontend use
@@ -36,7 +41,7 @@ def get_dashboard_data(entity):
 @st.cache_data
 def get_latest_dates_in_recommendation_table():
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"""
@@ -67,7 +72,7 @@ def get_upvote_percentage_for_user(recommendation_table_name, dt):
     together with the date it was produced at.
     """
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"""
@@ -103,7 +108,7 @@ def get_upvote_percentage_for_user(recommendation_table_name, dt):
 @st.cache_data
 def get_individual_user_visualisation(user_id):
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"""
@@ -147,7 +152,7 @@ def get_individual_user_visualisation(user_id):
 @st.cache_data
 def get_recommended_video_info(user_id):
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"""
@@ -201,7 +206,7 @@ def insert_model_feedback(data):
         return 1
 
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         insert_query = f"INSERT INTO nus_model_feedback (rating, feedback, model, recommended_item) " \
@@ -221,6 +226,7 @@ def insert_model_feedback(data):
         print("Error:", e)
         return 1
 
+@st.cache_data
 def get_model_ratings(recommended_item):
     """
     calculates the average rating for each model based on the recommended item
@@ -229,7 +235,7 @@ def get_model_ratings(recommended_item):
     if error fetching data, returns an empty dictionary
     """
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"SELECT model, FORMAT(AVG(rating), 2) FROM nus_model_feedback " \
