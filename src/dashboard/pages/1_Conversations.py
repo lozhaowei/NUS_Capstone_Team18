@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+from user_authen.authenticate_components import user_data, user_update, sign_up, check_login_status
 
 from src.dashboard.data.data_handling import filter_data
 from src.dashboard.data.database import get_dashboard_data
@@ -6,10 +8,7 @@ from src.dashboard.components import summary_metrics_component, historical_retra
     real_time_data_visualisation_component, user_feedback_component, model_rating_component, generate_pdf_component
 
 st.set_page_config(layout="wide")
-if (
-    st.session_state["authenticated"]
-    and "Admin" in st.session_state["user_cognito_groups"]
-):
+if st.session_state.role == "admin":
     data = get_dashboard_data("convo").reset_index(drop=True)
     model_list = data['model'].unique()
 
@@ -42,7 +41,7 @@ if (
     # generate_pdf_component(filtered_data, models, historical_chart)
 
 else:
-    if st.session_state["authenticated"]:
+    if st.session_state.username is not None:
         st.write("You do not have access. Please contact the administrator.")
     else:
         st.write("Please login!")

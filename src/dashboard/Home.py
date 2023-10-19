@@ -1,26 +1,34 @@
 import streamlit as st
-import user_authen.authenticate as authenticate
+from user_authen.authenticate_components import authenticate, setupemptyprofile, get_role, check_login_status, generate_captcha
 
 st.set_page_config(layout="wide")
 
 st.write("Welcome to the dashboard")
-authenticate.set_st_state_vars()
 
-if st.session_state["authenticated"]:
-    authenticate.button_logout()
-else:
-    authenticate.button_login()
+st.header("Login")
+if "username" not in st.session_state or "role" not in st.session_state:
+    setupemptyprofile()
 
-if (
-    st.session_state["authenticated"]
-    and "Admin" in st.session_state["user_cognito_groups"]
-):
-    st.write(
-        """You have logged in, you can access other pages"""
-    )
+username = st.text_input("Username")
+password = st.text_input("Password", type="password")
 
-else:
-    if st.session_state["authenticated"]:
-        st.write("You do not have access. Please contact the administrator.")
+#maybe do some if statement here so that it is only accessed once????? nt sure
+#original_text, captcha_image = generate_captcha()
+#st.write(original_text)
+#st.image(captcha_image)
+#captcha = st.text_input("Enter the letters that you see.").upper()
+
+with st.sidebar:
+    st.text("")
+    check_login_status()
+
+if st.button("Login"):
+    #print(captcha, original_text, captcha_image)
+    #if captcha == original_text:
+    if authenticate(username, password):
+        st.session_state.username = username
+        st.session_state.role = get_role(username)
+        st.success("Login successful!")
+        st.text("Welcome! You can now navigate through the different pages")
     else:
-        st.write("Please login!")
+        st.error("Login failed. Please check your credentials and/or your CAPTCHA.")
