@@ -40,8 +40,8 @@ def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str
     test_data = data[(data[date_col] > start_date) & (data[date_col] <= get_end_date(start_date))]
     return train_data, test_data
 
-def create_embedding_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
-                              video_df: pd.DataFrame, vote_df: pd.DataFrame, date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def create_interaction_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
+                              video_df: pd.DataFrame, vote_df: pd.DataFrame, post_feed_df: pd.DataFrame, date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # create the initial user interest matrix
     user_interest_train, _ = train_test_split_for_data(user_interest_df, 'updated_at', date)
     user_interest_train['count'] = 1
@@ -58,8 +58,7 @@ def create_embedding_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFr
     video_category_matrix = video_category_matrix.reindex(columns=user_interest_matrix.columns, fill_value=0)
 
     # update the initial user interest matrix with vote counts
-    vote_train, _ = train_test_split_for_data(vote_df, 'created_at', date)
-    vote_categories = pd.merge(vote_train[['video_id', 'voter_id', 'status']], video_category[['id_video_df', 'category']], 
+    vote_categories = pd.merge(vote_df[['video_id', 'voter_id', 'status']], video_category[['id_video_df', 'category']], 
                            how='left', left_on='video_id', right_on='id_video_df')
     vote_categories['value'] = np.where(vote_categories['status'] == 'UPVOTE', 1, -1)
     vote_categories = vote_categories.groupby(['voter_id', 'category'], as_index=False).agg({'value': 'sum'})
@@ -69,7 +68,18 @@ def create_embedding_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFr
     user_interest_matrix = user_interest_matrix.reindex(index=vote_categories_matrix.index, fill_value=0)
     user_interest_matrix = user_interest_matrix + vote_categories_matrix
 
-    return user_interest_matrix, video_category_matrix
+    # create weighted interaction matrix using watch_time / video_duration
+    video_interaction = post_feed_df[post_feed_df['media_type'] == 'VIDEO']
+    video_interaction['interaction'] = video_interaction['watch_time'] / video_interaction['video_duration']
+    video_interaction = video_interaction.groupby(['user_id', 'post_id'], as_index=False)['interaction'].mean()
+    video_interaction['value'] = video_interaction['interaction']  # Use 'interaction' as the interaction value
+    video_interaction_matrix = video_interaction.pivot(index='user_id', columns='post_id', values='value').fillna(0)
+    video_interaction_matrix = video_interaction_matrix.reindex(columns=user_interest_matrix.columns, fill_value=0)
+
+    # Apply weights to the interaction matrix
+    weighted_interaction_matrix = 0.7 * user_interest_matrix + 0.3 * video_interaction_matrix  # Example weights: 0.7 for votes, 0.3 for watch_time interaction
+
+    return weighted_interaction_matrix, video_category_matrix
 
 def similarity(user_id, video_id, user_interest_matrix, video_category_matrix):
     user = user_interest_matrix.loc[user_id]
@@ -137,11 +147,13 @@ def run_knn_recommender(date, K, num_cycles):
     season_df = pd.read_feather('datasets/raw/season.feather')
     video_df = pd.read_feather('datasets/raw/video.feather')
     vote_df = pd.read_feather('datasets/raw/vote.feather')
+    post_feed_df = pd.read_feather('datasets/raw/post_feed.feather')  
+
     model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
 
     for cycle in range(num_cycles):
-        user_interest_matrix, video_category_matrix = create_embedding_matrices(user_interest_df, user_df, season_df, video_df, vote_df, date)
-        model_statistics_for_training_cycle = get_summary_statistics(vote_df, user_interest_matrix, video_category_matrix, date, K)
+        weighted_interaction_matrix, video_category_matrix = create_interaction_matrices(user_interest_df, user_df, season_df, video_df, vote_df, post_feed_df, date)
+        model_statistics_for_training_cycle = get_summary_statistics(vote_df, weighted_interaction_matrix, video_category_matrix, date, K)
         model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
         date = get_end_date(date)
 

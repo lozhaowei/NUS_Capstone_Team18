@@ -13,6 +13,11 @@ CONN_PARAMS = {
     'database': config('DB_NAME'),
 }
 
+@st.cache_resource
+def connect_database(**CONN_PARAMS):
+    return pymysql.connect(**CONN_PARAMS)
+
+
 def get_dashboard_data(entity):
     """
     queries database to obtain metrics data of specific model, renames the columns for frontend use
@@ -34,33 +39,59 @@ def get_dashboard_data(entity):
         print("Error:", e)
 
 @st.cache_data
-def get_upvote_percentage_for_user(recommendation_table_name):
+def get_latest_dates_in_recommendation_table():
+    try:
+        conn = connect_database(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        query = f"""
+        SELECT DISTINCT DATE(created_at) as dates
+        FROM rs_daily_video_for_user
+        ORDER BY DATE(created_at) DESC
+        LIMIT 3;
+        """
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+        df = pd.DataFrame(result, columns=[i[0] for i in cursor.description])
+
+        return df
+
+    except Exception as e:
+        print("Error, ", e)
+
+@st.cache_data
+def get_upvote_percentage_for_user(recommendation_table_name, dt):
     """
-    Queries database for latest 3 dates in the list of recommendations produced by the model, for use in the "Latest Model Metrics" section.
+    Queries database for latest 3 dates in the list of recommendations produced by the model,
+    for use in the "Latest Model Metrics" section.
     Args:
-    :param recommendation_table_name: Name of table in AWS database to query from. Table should contain the recommendations produced by the relevant model,
+    :param dt: date
+    :param recommendation_table_name: Name of table in AWS database to query from. Table should contain the
+    recommendations produced by the relevant model,
     together with the date it was produced at.
     """
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
-        query = """
-        SELECT user_id, SUM(upvote_count) as upvoted_videos, COUNT(upvote_count) as number_recommended, SUM(upvote_count) / COUNT(upvote_count) as upvote_percentage
+        query = f"""
+        SELECT recommendation_id, user_id, SUM(is_upvote) as upvoted_videos, COUNT(is_upvote) as number_recommended,
+        SUM(is_upvote) / COUNT(is_upvote) as upvote_percentage
         FROM (
             SELECT *,
-                CASE
-                    WHEN t1.timestamp > t1.created_at THEN 1
-                    ELSE 0
-                    END AS upvote_count
+                   IF(t1.v_created_at >= t1.rdv_created_at, 1, 0) AS is_upvote
             FROM (
-                SELECT rdv.user_id, rdv.recommended_video_id, v.video_id, v.status, rdv.created_at, v.timestamp
+                SELECT rdv.recommendation_id, rdv.user_id, rdv.recommended_video_id, v.video_id, 
+                rdv.created_at AS rdv_created_at,
+                       v.created_at as v_created_at
                 FROM rs_daily_video_for_user rdv
-                        LEFT JOIN vote v
+                    LEFT JOIN
+                    (SELECT video_id, voter_id, created_at FROM vote GROUP BY video_id, voter_id) v
                                     ON rdv.recommended_video_id = v.video_id
                                         AND rdv.user_id = v.voter_id) t1
-                    WHERE DATE(t1.created_at) = '2023-09-05' AND DATE(t1.timestamp) = '2023-09-05'
-            ) t2 
+                    WHERE DATE(t1.rdv_created_at) = '{dt}'
+            ) t2
             GROUP BY user_id
             ORDER BY upvote_percentage DESC;
         """
@@ -74,9 +105,10 @@ def get_upvote_percentage_for_user(recommendation_table_name):
     except Exception as e:
         print("Error, ", e)
 
+@st.cache_data
 def get_individual_user_visualisation(user_id):
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"""
@@ -98,23 +130,29 @@ def get_individual_user_visualisation(user_id):
             (SELECT v.voter_id, s.category 
             FROM vote v
             LEFT JOIN season s
-            ON v.season_id = s.id) AS subquery
+            ON v.season_id = s.id
+            WHERE v.voter_id = '{user_id}') AS subquery
         GROUP BY voter_id
-        HAVING voter_id = '{user_id}'
         """
 
         cursor.execute(query)
         result = cursor.fetchall()
         df = pd.DataFrame(result, columns=[i[0] for i in cursor.description])
 
+        if len(df) == 0:
+            df = pd.DataFrame(columns=["voter_id", "Others", "Dance", "ArtandDesign", "StyleandBeauty", "Music", "Comedy",
+                                       "Lifestyle", "FoodandDrinks", "SportsandFitness", "Gaming", "NFT", "HacksandProductivity"])
+            df.loc[len(df)] = [user_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
         return df
     
     except Exception as e:
         print("Error, ", e)
 
+@st.cache_data
 def get_recommended_video_info(user_id):
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"""
@@ -133,16 +171,15 @@ def get_recommended_video_info(user_id):
             SUM(CASE WHEN category = 'NFT' THEN 1 ELSE 0 END) AS NFT,
             SUM(CASE WHEN category = 'HACKS&PRODUCTIVITY' THEN 1 ELSE 0 END) AS HacksandProductivity
         FROM (
-            SELECT rdv.user_id, rdv.recommended_video_id, v.season_id, s.category
+            SELECT rdv.user_id, s.category
             FROM (
                 rs_daily_video_for_user rdv 
                 LEFT JOIN video v ON rdv.recommended_video_id = v.id
                 LEFT JOIN season s ON v.season_id = s.id
             )
-            WHERE DATE(rdv.created_at) = '2023-09-05'
+            WHERE DATE(rdv.created_at) = '2023-09-05' AND rdv.user_id = '{user_id}'
         ) t1
-        GROUP BY user_id
-        HAVING user_id = '{user_id}';
+        GROUP BY user_id;
         """
 
         cursor.execute(query)
@@ -169,7 +206,7 @@ def insert_model_feedback(data):
         return 1
 
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         insert_query = f"INSERT INTO nus_model_feedback (rating, feedback, model, recommended_item) " \
@@ -189,6 +226,7 @@ def insert_model_feedback(data):
         print("Error:", e)
         return 1
 
+@st.cache_data
 def get_model_ratings(recommended_item):
     """
     calculates the average rating for each model based on the recommended item
@@ -197,7 +235,7 @@ def get_model_ratings(recommended_item):
     if error fetching data, returns an empty dictionary
     """
     try:
-        conn = pymysql.connect(**CONN_PARAMS)
+        conn = connect_database(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"SELECT model, FORMAT(AVG(rating), 2) FROM nus_model_feedback " \
