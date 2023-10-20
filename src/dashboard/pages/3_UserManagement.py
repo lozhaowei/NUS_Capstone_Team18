@@ -4,20 +4,22 @@ from user_authen.authenticate_components import user_data, user_update, sign_up,
 
 
 st.set_page_config(layout="wide")
-st.header("User Management")
+st.header(":violet[User Management]")
 st.markdown("""---""")
 
 check_login_status()
 
 if st.session_state.role == "admin":
-    if st.checkbox("Show User Data"):
+    st.subheader(":orange[User Data]")
+    if st.checkbox(":green[Show User Data]"):
         st.write(user_data)
 
     st.markdown("""---""")
-    st.subheader("Add User")
+    st.subheader(":orange[Add User]")
     sign_up()
 
     st.markdown("""---""")
+    st.subheader(":orange[Manage Users]")
     user_update()
 
 elif st.session_state.username:
