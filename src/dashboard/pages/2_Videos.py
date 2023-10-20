@@ -1,11 +1,14 @@
 import streamlit as st
 
+from user_authen.authenticate_components import check_login_status
 from src.dashboard.data.data_handling import filter_data
 from src.dashboard.data.database import get_dashboard_data
 from src.dashboard.components import summary_metrics_component, historical_retraining_data_visualisation_component, \
       real_time_data_visualisation_component, user_feedback_component, model_rating_component, generate_pdf_component
 
 st.set_page_config(layout="wide")
+
+check_login_status()
 
 if st.session_state.role == "admin":
     data = get_dashboard_data("video").reset_index(drop=True)

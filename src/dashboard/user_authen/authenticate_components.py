@@ -3,12 +3,12 @@ import streamlit as st
 import hashlib
 import os
 import re
+import random
+
 from streamlit_extras.switch_page_button import switch_page
 from captcha.image import ImageCaptcha
 from PIL import Image
-import io
-import base64
-import random
+
 
 # Define the path for the CSV file
 csv_file_path = "user_data.csv"
@@ -62,6 +62,10 @@ def get_role(username):
     user = user_data[user_data["username"] == username]
     return user.iloc[0]["role"]
 
+def get_password(username):
+    user = user_data[user_data["username"] == username]
+    return user.iloc[0]["password"]
+
 def check_login_status():
     if st.session_state.username is not None:
         if st.sidebar.button("Log Out"):
@@ -88,7 +92,7 @@ def is_strong_password(password):
     return True
 
 def user_update():
-    action = st.selectbox("Select an action: ", ["Delete User", "Update User Email", "Update User Password"])
+    action = st.selectbox("Select an action: ", ["Delete User", "Update User Email", "Update User Password", "Update User Role"])
     if action == "Delete User":
         st.subheader("Delete User")
         search_string = st.text_input("Search user to delete", "")
@@ -133,6 +137,18 @@ def user_update():
                 st.success("Password successfully changed")
             else:
                 st.write("Please check the password fields are correct!")
+        user_data.to_csv(csv_file_path, index=False)
+    elif action == "Update User Role":
+        st.subheader("Update User Role")
+        search_string = st.text_input("Search user to update", "")
+        user_list = user_data["username"].tolist()
+        filtered_users = [user for user in user_list if search_string in user]
+        user_to_update = st.selectbox("Select the user to update:", sorted(filtered_users))
+        user_index = user_data[user_data['username'] == user_to_update].index
+        new_role = st.selectbox("Role", ["admin", "user", "guest user"])
+        if st.button("Update"):
+            user_data.loc[user_index, "role"] = new_role
+            st.success("User role successfully changed")
         user_data.to_csv(csv_file_path, index=False)
         
     
@@ -185,3 +201,54 @@ def generate_captcha():
     image = captcha.generate(txt)
     return txt, image
 
+import base64
+
+# Pseudo-code for generating a session token
+def generate_session_token(username, role):
+    # Combine username and role as a string
+    user_info = f"{username}:{role}"
+    # Encode the user information to base64
+    encoded_user_info = base64.b64encode(user_info.encode()).decode()
+    # Create and return the session token
+    return encoded_user_info
+
+# Pseudo-code for extracting username and role from a session token
+def get_username_from_session_token(session_token):
+    try:
+        # Decode base64 and split the user info
+        decoded_user_info = base64.b64decode(session_token.encode()).decode()
+        username, role = decoded_user_info.split(":")
+        return username
+    except Exception as e:
+        return None
+
+def get_role_from_session_token(session_token):
+    try:
+        # Decode base64 and split the user info
+        decoded_user_info = base64.b64decode(session_token.encode()).decode()
+        username, role = decoded_user_info.split(":")
+        return role
+    except Exception as e:
+        return None
+
+def login_with_remember_me():
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    remember_me = st.checkbox(":green[Remember Me]")
+    if st.button("Login"):
+        if remember_me:
+            session_token = generate_session_token(username, get_role(username))
+            st.session_state.session_token = session_token
+        #print(captcha, original_text, captcha_image)
+        #if captcha == original_text:
+        
+        if authenticate(username, password):
+            if not remember_me:
+                st.session_state.session_token = None
+            st.session_state.username = username
+            st.session_state.role = get_role(username)
+            st.session_state.password = password
+            st.success("Login successful!")
+            st.text("Welcome! You can now navigate through the different pages")
+        else:
+            st.error("Login failed. Please check your credentials and/or your CAPTCHA.")
