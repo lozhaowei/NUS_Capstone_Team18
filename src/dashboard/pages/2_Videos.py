@@ -7,10 +7,7 @@ from src.dashboard.components import summary_metrics_component, historical_retra
 
 st.set_page_config(layout="wide")
 
-if (
-    st.session_state["authenticated"]
-    and "Admin" in st.session_state["user_cognito_groups"]
-):
+if st.session_state.role == "admin":
     data = get_dashboard_data("video").reset_index(drop=True)
     model_list = data['model'].unique()
 
@@ -45,10 +42,9 @@ if (
 
 
 else:
-    if st.session_state["authenticated"]:
+    if st.session_state.username is not None:
         st.write("You do not have access. Please contact the administrator.")
     else:
         st.write("Please login!")
-
 
 
