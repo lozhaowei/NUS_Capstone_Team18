@@ -20,7 +20,8 @@ if st.session_state.role == "admin":
     filtered_data = filter_data(data, models)
 
     elements = st.multiselect("Choose the elements that you want to show",
-                            options=["Summary Metrics", "Real Time Data", "Historical Chart", "User Feedback"])
+                              options=["Summary Metrics", "Real Time Data", "Historical Chart", "User Feedback"],
+                              default=["Summary Metrics", "Historical Chart"])
 
     st.divider()
 

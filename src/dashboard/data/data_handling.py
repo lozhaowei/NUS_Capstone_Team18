@@ -24,6 +24,30 @@ def filter_data(data, models):
 
     return data.copy()[mask]
 
+def get_graph_for_real_time_component(data, columns):
+    line_chart_data = data[columns + ["dt"]].set_index("dt")
+    line_chart_data = line_chart_data.apply(pd.to_numeric)
+
+    fig = px.line(line_chart_data, x=line_chart_data.index, y=columns, title="Recommendations Visualisation")
+
+    fig.update_xaxes(
+        rangeselector=dict(
+            buttons=list([
+                dict(count=3, label="3D", step="day", stepmode="backward"),
+                dict(count=7, label="1W", step="day", stepmode="backward"),
+                dict(count=1, label="1M", step="month", stepmode="backward"),
+                dict(step="all")
+            ])
+        ),
+        rangeslider=dict(visible=True)
+    )
+
+    fig.update_layout(
+        autosize=True
+    )
+
+    return fig
+
 def get_chart_data_for_multiple_models(data, models, metrics):
     new_df = pd.DataFrame(index=data["dt"].unique())
     filtered_data = data.copy()
@@ -63,7 +87,7 @@ def get_graph_for_summary_metric(filtered_data, freq, models, metrics):
         rangeslider=dict(visible=True)
     )
 
-    date_iterator = line_chart_data.index[0]
+    date_iterator = line_chart_data.index[0] # TODO: Change to the first retraining date applicable
     while date_iterator <= line_chart_data.index[-1]:
         fig.add_vline(x=date_iterator, line_dash="dash", line_color="red")
         date_iterator += datetime.timedelta(days=3)

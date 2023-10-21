@@ -8,9 +8,9 @@ from tempfile import NamedTemporaryFile
 
 # from src.video_recommend.knn import create_embedding_matrices
 from src.dashboard.data.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
-    get_graph_for_summary_metric
+    get_graph_for_summary_metric, get_graph_for_real_time_component
 from src.dashboard.data.database import get_latest_dates_in_recommendation_table, get_upvote_percentage_for_user, get_individual_user_visualisation, \
-    get_recommended_video_info, insert_model_feedback, get_model_ratings
+    get_recommended_video_info, insert_model_feedback, get_model_ratings, get_upvote_percentage_for_day
 
 def summary_metrics_component(filtered_data, models):
     """
@@ -31,7 +31,7 @@ def summary_metrics_component(filtered_data, models):
         col3.metric("F1 Score", f1_metric[0], f1_metric[1])
         st.markdown(f"Summary metrics shown are as of **{latest_date.date()}** and change in metrics is compared to **{second_latest_date.date()}**.")
 
-def real_time_data_visualisation_component():
+def real_time_data_visualisation_component_old():
     try:
         dates = get_latest_dates_in_recommendation_table()
 
@@ -64,11 +64,28 @@ def real_time_data_visualisation_component():
         video_fig.add_trace(go.Scatterpolar(r=video_data.loc[0], theta=video_data.loc[0].index, fill="toself",
                                             fillcolor="rgba(190, 233, 232)", name="Recommender"))
         video_fig.update_layout(showlegend=True)
-        col2.plotly_chart(video_fig, user_container_width=True)
+        col2.plotly_chart(video_fig, use_container_width=True)
         st.markdown(f"User **{user}** has an upvote percentage of **{format(data.loc[user, 'upvote_percentage'], '.1%')}** and was recommended **{data.loc[user, 'number_recommended']}** videos.")
 
     except Exception as e:
         print("Error displaying realtime data visualisation component:", e)
+
+def real_time_data_visualisation_component():
+    data = get_upvote_percentage_for_day()
+    st.subheader("Visualisation of Recommendations Generated")
+    
+    col1, col2, col3 = st.columns([0.3, 0.3, 0.4])
+    start_date = col1.date_input("Start Date", value=min(data["dt"]), min_value=min(data["dt"]), max_value=max(data["dt"]))
+    end_date = col2.date_input("End Date", value=max(data["dt"]), min_value=min(data["dt"]), max_value=max(data["dt"]))
+    columns = col3.multiselect("Metrics", options=["upvoted_videos", "number_recommended", "upvote_percentage"],
+                               default="upvote_percentage")
+    
+    data = data[(data["dt"] >= start_date) & (data["dt"] <= end_date)]
+    fig = get_graph_for_real_time_component(data, columns)
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    return fig
 
 def historical_retraining_data_visualisation_component(filtered_data, models):
     """
@@ -76,18 +93,20 @@ def historical_retraining_data_visualisation_component(filtered_data, models):
     :param filtered_data: filtered dataframe based on the models selected for the page
     :param models: list of models selected for the page
     """
-    if st.checkbox('Show metrics results'):
-        st.write('Metrics Data')
+    tab1, tab2 = st.tabs(["Visualisation", "Data"])
+    
+    with tab1:
+        col1, col2, col3 = st.columns([0.5, 0.25, 0.25])
+        col1.subheader('Summary Metrics in Historical Retraining')
+        freq = col2.radio("Frequency", ["D", "W", "M", "Y"], horizontal=True)
+        metrics = col3.multiselect('Metrics', options=['Precision', 'Recall', 'Accuracy', 'F1 Score', 'ROC AUC Score',
+                                                    'HitRatio@K', 'NDCG@K'], default='ROC AUC Score')
+
+        fig = get_graph_for_summary_metric(filtered_data, freq, models, metrics)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with tab2:
         st.write(filtered_data)
-
-    col1, col2, col3 = st.columns([0.5, 0.25, 0.25])
-    col1.subheader('Summary Metrics in Historical Retraining')
-    freq = col2.radio("Frequency", ["D", "W", "M", "Y"], horizontal=True)
-    metrics = col3.multiselect('Metrics', options=['Precision', 'Recall', 'Accuracy', 'F1 Score', 'ROC AUC Score',
-                                                'HitRatio@K', 'NDCG@K'], default='ROC AUC Score')
-
-    fig = get_graph_for_summary_metric(filtered_data, freq, models, metrics)
-    st.plotly_chart(fig, use_container_width=True)
 
     return fig
 
