@@ -38,6 +38,25 @@ def get_dashboard_data(entity):
     except Exception as e:
         print("Error:", e)
 
+def get_upvote_percentage_for_day():
+    try:
+        conn = connect_database(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        query = f"""
+        SELECT * FROM nus_rs_video_upvote;
+        """
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+        df = pd.DataFrame(result, columns=[i[0] for i in cursor.description])
+        df["dt"] = pd.to_datetime(df["dt"]).dt.date
+
+        return df
+
+    except Exception as e:
+        print("Error, ", e)
+
 @st.cache_data
 def get_latest_dates_in_recommendation_table():
     try:

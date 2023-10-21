@@ -20,16 +20,13 @@ if st.session_state.role == "admin":
     models = col2.multiselect('Model', options=model_list, default=model_list[0])
     filtered_data = filter_data(data, models)
     elements = st.multiselect("Choose the elements that you want to show",
-                            options=["Summary Metrics", "Real Time Data", "Historical Chart", "User Feedback"])
+                              options=["Summary Metrics", "Historical Chart", "User Feedback"],
+                              default=["Summary Metrics", "Historical Chart"])
 
     st.divider()
 
     if "Summary Metrics" in elements:
         summary_metrics_component(filtered_data, models)
-        st.divider()
-
-    if "Real Time Data" in elements:
-        real_time_data_visualisation_component()
         st.divider()
 
     if "Historical Chart" in elements:
