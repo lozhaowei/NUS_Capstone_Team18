@@ -19,9 +19,10 @@ if st.session_state.role == "admin":
     models = col2.multiselect('Model', options=model_list, default=model_list[0])
     filtered_data = filter_data(data, models)
 
+    element_list = ["Summary Metrics", "Real Time Data", "Historical Chart", "User Feedback"]
     elements = st.multiselect("Choose the elements that you want to show",
-                              options=["Summary Metrics", "Real Time Data", "Historical Chart", "User Feedback"],
-                              default=["Summary Metrics", "Historical Chart"])
+                              options=element_list,
+                              default=element_list)
 
     st.divider()
 
@@ -43,7 +44,6 @@ if st.session_state.role == "admin":
         user_feedback_component('video', model_list)
 
     # generate_pdf_component(filtered_data, models, historical_chart)
-
 
 else:
     if st.session_state.username is not None:
