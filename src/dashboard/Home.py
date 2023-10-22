@@ -1,6 +1,7 @@
 import streamlit as st
-from user_authen.authenticate_components import authenticate, setupemptyprofile, get_role, check_login_status, generate_captcha, \
-    generate_session_token, get_role_from_session_token, get_username_from_session_token, login_with_remember_me
+from user_authen.authenticate_components import authenticate, setupemptyprofile, get_role, check_login_status, \
+    generate_captcha, generate_session_token, \
+    get_role_from_session_token, get_username_from_session_token, login_with_remember_me
 
 st.set_page_config(layout="wide")
 
@@ -10,11 +11,11 @@ st.header("Login")
 if "username" not in st.session_state or "role" not in st.session_state:
     setupemptyprofile()
 
-#maybe do some if statement here so that it is only accessed once????? nt sure
-#original_text, captcha_image = generate_captcha()
-#st.write(original_text)
-#st.image(captcha_image)
-#captcha = st.text_input("Enter the letters that you see.").upper()
+# maybe do some if statement here so that it is only accessed once????? nt sure
+# original_text, captcha_image = generate_captcha()
+# st.write(original_text)
+# st.image(captcha_image)
+# captcha = st.text_input("Enter the letters that you see.").upper()
 
 with st.sidebar:
     st.text("")
@@ -38,5 +39,3 @@ else:
             login_with_remember_me()
     else:
         login_with_remember_me()
-
-
