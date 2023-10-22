@@ -81,10 +81,14 @@ def real_time_data_visualisation_component():
                                    default="upvote_percentage")
 
         data = data[(data["dt"] >= start_date) & (data["dt"] <= end_date)]
-        fig = get_graph_for_real_time_component(data, columns)
+        
 
-        st.plotly_chart(fig, use_container_width=True)
-
+        # fig = get_graph_for_real_time_component(data, columns)
+        # st.plotly_chart(fig, use_container_width=True)
+        for column in columns:
+            fig = get_graph_for_real_time_component(data, column)
+            st.plotly_chart(fig, use_container_width=True)
+        
         return fig
 
     except Exception as e:
