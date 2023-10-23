@@ -22,8 +22,10 @@ CONN_PARAMS = {
     'database': config('DB_NAME'),
 }
 
-def get_end_date(start_date: str) -> str:
-    end_date = datetime.now().strftime('%Y-%m-%d')
+def get_end_date() -> str:
+    # Calculate end date as 2 weeks before today
+    today = datetime.now()
+    end_date = (today - timedelta(weeks=2)).strftime('%Y-%m-%d')
     return end_date
 
 def get_num_cycles(start_date: str) -> int:
@@ -37,7 +39,7 @@ def get_num_cycles(start_date: str) -> int:
 
 def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     train_data = data[data[date_col] <= start_date]
-    test_data = data[(data[date_col] > start_date) & (data[date_col] <= get_end_date(start_date))]
+    test_data = data[(data[date_col] > start_date) & (data[date_col] <= get_end_date())]
     return train_data, test_data
 
 def create_interaction_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
@@ -155,7 +157,7 @@ def run_knn_recommender(date, K, num_cycles):
         weighted_interaction_matrix, video_category_matrix = create_interaction_matrices(user_interest_df, user_df, season_df, video_df, vote_df, post_feed_df, date)
         model_statistics_for_training_cycle = get_summary_statistics(vote_df, weighted_interaction_matrix, video_category_matrix, date, K)
         model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
-        date = get_end_date(date)
+        date = get_end_date()
 
     model_statistics['model'] = 'knn'
     model_statistics.to_csv('datasets/final/knn_video.csv', index=False)

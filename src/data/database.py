@@ -28,37 +28,23 @@ def insert_data(table_name, data):
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
 
-        # Drop the table if it exists
-        drop_table_query = f'DROP TABLE IF EXISTS {table_name}'
-        cursor.execute(drop_table_query)
-
-        # Create a table with backticks for column names
-        create_table_query = f'''
-        CREATE TABLE {table_name} (
-            `id` INT PRIMARY KEY AUTO_INCREMENT,
-            `dt` DATE,
-            `roc_auc_score` FLOAT,
-            `accuracy` FLOAT,
-            `precision` FLOAT,
-            `recall` FLOAT,
-            `f1_score` FLOAT,
-            `hit_ratio_k` FLOAT,
-            `ndcg_k` FLOAT,
-            `model` VARCHAR(255)
-        )
-        '''
-
-        cursor.execute(create_table_query)
-
-        data_values = ', '.join(['%s'] * len(data.columns))
-        insert_query = f'INSERT INTO {table_name} (`dt`, `roc_auc_score`, `accuracy`, `precision`, `recall`, `f1_score`, `hit_ratio_k`, `ndcg_k`, `model`) VALUES ({data_values})'
-
         # Convert 'dt' column to string before insertion
         data['dt'] = data['dt'].astype(str)
         # Convert NaN values to None for proper insertion
         data = data.where(pd.notna(data), None)
 
-        cursor.executemany(insert_query, data.values.tolist())
+        # Insert data only if the combination of 'dt' and 'model' is unique
+        for _, row in data.iterrows():
+            insert_query = f'''
+            INSERT INTO {table_name} (`dt`, `roc_auc_score`, `accuracy`, `precision`, `recall`, `f1_score`, `hit_ratio_k`, `ndcg_k`, `model`) 
+            SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s 
+            WHERE NOT EXISTS (
+                SELECT 1 FROM {table_name} WHERE `dt` = %s AND `model` = %s
+            )
+            '''
+            cursor.execute(insert_query, (row['dt'], row['roc_auc_score'], row['accuracy'], row['precision'],
+                                         row['recall'], row['f1_score'], row['hit_ratio_k'], row['ndcg_k'],
+                                         row['model'], row['dt'], row['model']))
 
         conn.commit()
         conn.close()
