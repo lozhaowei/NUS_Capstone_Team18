@@ -8,7 +8,6 @@ from src.conversation_recommend.cosine_similarity import run_collaborative_recom
 from src.conversation_recommend.random_forest_convo import run_model_convo
 import schedule
 import time 
-conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
 
 
 def main():
@@ -32,6 +31,7 @@ def main():
     insert_data("nus_video_eval", combined_data)
 
     # Step 4: Run the 3 models for Conversations Recommendations
+    conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
     knn_eval_convo = run_collaborative_recommender('2023-09-02', 3, 4, conversation_like)
     print(knn_eval_convo)
     random_forest_eval_convo = run_model_convo()
@@ -41,9 +41,6 @@ def main():
     combine_tables_convo()
     combined_data_2 = pd.read_csv("datasets/final/nus_convo_eval.csv")
     insert_data("nus_convo_eval", combined_data_2)
-
-    # get dashboard metrics (commented out because i transferred this directly to the dashboard)
-    # get_dashboard_data()
 
 if __name__ == "__main__":
     schedule.every().day.at("21:46").do(main)
