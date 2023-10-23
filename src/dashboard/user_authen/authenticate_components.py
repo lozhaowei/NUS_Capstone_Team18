@@ -8,6 +8,7 @@ import random
 from streamlit_extras.switch_page_button import switch_page
 from captcha.image import ImageCaptcha
 from PIL import Image
+from src.dashboard.data.spark_pipeline import SparkPipeline
 
 
 # Define the path for the CSV file
@@ -250,5 +251,11 @@ def login_with_remember_me():
             st.session_state.password = password
             st.success("Login successful!")
             st.text("Welcome! You can now navigate through the different pages")
+
+            # Run query recommended item hit ratio functions
+            spark_pipeline = SparkPipeline()
+            spark_pipeline.initialize_spark_session()
+            spark_pipeline.run_video_upvote_percentage_pipeline()
+            spark_pipeline.close_spark_session()
         else:
             st.error("Login failed. Please check your credentials and/or your CAPTCHA.")

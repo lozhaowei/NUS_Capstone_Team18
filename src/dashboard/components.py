@@ -1,5 +1,4 @@
 import base64
-import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 from streamlit_star_rating import st_star_rating
@@ -9,7 +8,7 @@ from tempfile import NamedTemporaryFile
 # from src.video_recommend.knn import create_embedding_matrices
 from src.dashboard.data.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
     get_graph_for_summary_metric, get_graph_for_real_time_component
-from src.dashboard.data.database import get_latest_dates_in_recommendation_table, get_upvote_percentage_for_user, get_individual_user_visualisation, \
+from src.dashboard.data.database import get_latest_dates_in_recommendation_table, get_individual_user_visualisation, \
     get_recommended_video_info, insert_model_feedback, get_model_ratings, get_upvote_percentage_for_day
 
 def summary_metrics_component(filtered_data, models):
@@ -71,21 +70,29 @@ def real_time_data_visualisation_component_old():
         print("Error displaying realtime data visualisation component:", e)
 
 def real_time_data_visualisation_component():
-    data = get_upvote_percentage_for_day()
-    st.subheader("Visualisation of Recommendations Generated")
-    
-    col1, col2, col3 = st.columns([0.3, 0.3, 0.4])
-    start_date = col1.date_input("Start Date", value=min(data["dt"]), min_value=min(data["dt"]), max_value=max(data["dt"]))
-    end_date = col2.date_input("End Date", value=max(data["dt"]), min_value=min(data["dt"]), max_value=max(data["dt"]))
-    columns = col3.multiselect("Metrics", options=["upvoted_videos", "number_recommended", "upvote_percentage"],
-                               default="upvote_percentage")
-    
-    data = data[(data["dt"] >= start_date) & (data["dt"] <= end_date)]
-    fig = get_graph_for_real_time_component(data, columns)
+    try:
+        data = get_upvote_percentage_for_day()
+        st.subheader("Visualisation of Recommendations Generated")
 
-    st.plotly_chart(fig, use_container_width=True)
+        col1, col2, col3 = st.columns([0.3, 0.3, 0.4])
+        start_date = col1.date_input("Start Date", value=min(data["dt"]), min_value=min(data["dt"]), max_value=max(data["dt"]))
+        end_date = col2.date_input("End Date", value=max(data["dt"]), min_value=min(data["dt"]), max_value=max(data["dt"]))
+        columns = col3.multiselect("Metrics", options=["upvoted_videos", "number_recommended", "upvote_percentage"],
+                                   default="upvote_percentage")
 
-    return fig
+        data = data[(data["dt"] >= start_date) & (data["dt"] <= end_date)]
+        
+
+        # fig = get_graph_for_real_time_component(data, columns)
+        # st.plotly_chart(fig, use_container_width=True)
+        for column in columns:
+            fig = get_graph_for_real_time_component(data, column)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        return fig
+
+    except Exception as e:
+        print('Error loading realtime data visualisation component: ', e)
 
 def historical_retraining_data_visualisation_component(filtered_data, models):
     """
@@ -93,44 +100,56 @@ def historical_retraining_data_visualisation_component(filtered_data, models):
     :param filtered_data: filtered dataframe based on the models selected for the page
     :param models: list of models selected for the page
     """
-    tab1, tab2 = st.tabs(["Visualisation", "Data"])
-    
-    with tab1:
-        col1, col2, col3 = st.columns([0.5, 0.25, 0.25])
-        col1.subheader('Summary Metrics in Historical Retraining')
-        freq = col2.radio("Frequency", ["D", "W", "M", "Y"], horizontal=True)
-        metrics = col3.multiselect('Metrics', options=['Precision', 'Recall', 'Accuracy', 'F1 Score', 'ROC AUC Score',
-                                                    'HitRatio@K', 'NDCG@K'], default='ROC AUC Score')
+    try:
+        tab1, tab2 = st.tabs(["Visualisation", "Data"])
 
-        fig = get_graph_for_summary_metric(filtered_data, freq, models, metrics)
-        st.plotly_chart(fig, use_container_width=True)
+        with tab1:
+            col1, col2, col3 = st.columns([0.5, 0.25, 0.25])
+            col1.subheader('Summary Metrics in Historical Retraining')
+            freq = col2.radio("Frequency", ["D", "W", "M", "Y"], horizontal=True)
+            metrics = col3.multiselect('Metrics', options=['Precision', 'Recall', 'Accuracy', 'F1 Score', 'ROC AUC Score',
+                                                        'HitRatio@K', 'NDCG@K'], default='ROC AUC Score')
 
-    with tab2:
-        st.write(filtered_data)
+            fig = get_graph_for_summary_metric(filtered_data, freq, models, metrics)
+            st.plotly_chart(fig, use_container_width=True)
 
-    return fig
+        with tab2:
+            st.write(filtered_data)
+
+        return fig
+
+    except Exception as e:
+        print('Error loading historical retraining data visualisation component: ', e)
 
 def model_rating_component(recommended_item):
     """
     Model Rating Component
     :param recommended_item: item that the model recommended
     """
-    st.subheader("Overall Model Rating")
-    model_ratings = get_model_ratings(recommended_item)
+    try:
+        st.subheader("Overall Model Rating")
+        model_ratings = get_model_ratings(recommended_item)
 
-    # maximum amount of columns per row
-    max_columns = 3
-    cols = st.columns(max_columns)
-    counter = 0
+        if model_ratings is None or len(model_ratings) == 0:
+            print('Error getting model ratings')
+            return
 
-    for k, v in model_ratings.items():
-        # wraps columns around
-        col = cols[counter % max_columns]
-        col.metric(k, v)
-        counter += 1
+        # maximum amount of columns per row
+        max_columns = 3
+        cols = st.columns(max_columns)
+        counter = 0
 
-    # add spacing
-    st.write("")
+        for k, v in model_ratings.items():
+            # wraps columns around
+            col = cols[counter % max_columns]
+            col.metric(k, v)
+            counter += 1
+
+        # add spacing
+        st.write("")
+
+    except Exception as e:
+        print('Error loading model rating component: ', e)
 
 def user_feedback_component(recommended_item, model_list):
     """
@@ -138,27 +157,31 @@ def user_feedback_component(recommended_item, model_list):
     :param recommended_item: item that the model recommended
     :param model_list: list of models
     """
-    with st.form("feedback_form", clear_on_submit=True):
-        st.subheader('User Feedback')
+    try:
+        with st.form("feedback_form", clear_on_submit=True):
+            st.subheader('User Feedback')
 
-        rating = st_star_rating("Model rating", maxValue=5, defaultValue=5, key="rating",
-                                customCSS="h3 {font-size: 14px;}")
+            rating = st_star_rating("Model rating", maxValue=5, defaultValue=5, key="rating",
+                                    customCSS="h3 {font-size: 14px;}")
 
-        model = st.selectbox('Choose model', options=model_list)
-        feedback = st.text_area('Add feedback', placeholder='Enter User Feedback', max_chars=500)
+            model = st.selectbox('Choose model', options=model_list)
+            feedback = st.text_area('Add feedback', placeholder='Enter User Feedback', max_chars=500)
 
-        submitted = st.form_submit_button("Submit")
+            submitted = st.form_submit_button("Submit")
 
-        if submitted:
-            if feedback == '':
-                st.warning('Please enter feedback before submitting!')
-            else:
-                # TODO add user id (and role?)
-                if insert_model_feedback({'feedback': feedback, 'rating': rating, 'model': model,
-                                          'recommended_item': recommended_item}) == 0:
-                    st.success('Feedback submitted!')
+            if submitted:
+                if feedback == '':
+                    st.warning('Please enter feedback before submitting!')
                 else:
-                    st.warning('Error submitting feedback!')
+                    # TODO add user id (and role?)
+                    if insert_model_feedback({'feedback': feedback, 'rating': rating, 'model': model,
+                                              'recommended_item': recommended_item}) == 0:
+                        st.success('Feedback submitted!')
+                    else:
+                        st.warning('Error submitting feedback!')
+
+    except Exception as e:
+        print('Error loading user feed back form: ', e)
 
 def create_download_link(val, filename):
     b64 = base64.b64encode(val)  # val looks like b'...'
