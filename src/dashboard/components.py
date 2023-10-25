@@ -11,7 +11,7 @@ from src.dashboard.data.data_handling import get_summary_metric_for_model, get_c
 from src.dashboard.data.database import get_latest_dates_in_recommendation_table, get_individual_user_visualisation, \
     get_recommended_video_info, insert_model_feedback, get_model_ratings, get_upvote_percentage_for_day
 
-def summary_metrics_component(filtered_data, models):
+def summary_metrics_component(entity, filtered_data, models):
     """
     Visualise the summary metrics for each model selected in the page.
     :param filtered_data: filtered dataframe based on the models selected for the page
@@ -69,7 +69,7 @@ def real_time_data_visualisation_component_old():
     except Exception as e:
         print("Error displaying realtime data visualisation component:", e)
 
-def real_time_data_visualisation_component():
+def real_time_data_visualisation_component(entity, filtered_data, models):
     try:
         data = get_upvote_percentage_for_day()
         st.subheader("Visualisation of Recommendations Generated")
@@ -94,7 +94,7 @@ def real_time_data_visualisation_component():
     except Exception as e:
         print('Error loading realtime data visualisation component: ', e)
 
-def historical_retraining_data_visualisation_component(filtered_data, models):
+def historical_retraining_data_visualisation_component(entity, filtered_data, models):
     """
     Plots the graph for historical retraining information of models.
     :param filtered_data: filtered dataframe based on the models selected for the page
@@ -182,6 +182,19 @@ def user_feedback_component(recommended_item, model_list):
 
     except Exception as e:
         print('Error loading user feed back form: ', e)
+
+def feedback_component(entity, filtered_data, models):
+    model_rating_component(entity)
+    user_feedback_component(entity, models)
+
+def function_mapping():
+    map = {
+        "Summary Metrics": summary_metrics_component,
+        "Real Time Data": real_time_data_visualisation_component,
+        "Historical Chart": historical_retraining_data_visualisation_component,
+        "User Feedback": feedback_component
+    }
+    return map
 
 def create_download_link(val, filename):
     b64 = base64.b64encode(val)  # val looks like b'...'
