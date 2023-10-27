@@ -32,7 +32,8 @@ def main():
 
     # Step 4: Run the 3 models for Conversations Recommendations
     conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
-    knn_eval_convo = run_collaborative_recommender('2023-09-02', 3, 4, conversation_like)
+    conversation_categories = pd.read_feather("datasets/final/conversation_with_categories.feather")
+    knn_eval_convo = run_collaborative_recommender('2023-09-02', 10, 4, conversation_like, conversation_categories)
     print(knn_eval_convo)
     random_forest_eval_convo = run_model_convo()
     print(random_forest_eval_convo)
@@ -43,6 +44,7 @@ def main():
     insert_data("nus_convo_eval", combined_data_2)
 
 if __name__ == "__main__":
+    main()
     schedule.every().day.at("21:46").do(main)
 
 while True:
