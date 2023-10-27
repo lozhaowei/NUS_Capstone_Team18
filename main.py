@@ -17,7 +17,7 @@ def main():
                     'user', 'user_interest', 'video', 'vote'])
 
     # Step 2: Run the 3 models for Video Recommendations
-    knn_eval_video = run_knn_recommender('2023-07-01', 10, get_num_cycles('2023-07-01'))
+    knn_eval_video = run_knn_recommender('2023-10-18', 10, get_num_cycles('2023-07-01'))
     print(knn_eval_video)
 
     random_forest_eval_video = run_model()
@@ -25,7 +25,7 @@ def main():
 
     run_svd_recommender('2023-07-01', 10, get_num_cycles('2023-07-01'))
     
-    # Step 3: Combine the 3 evaluation tables into 1 mega table
+    # # Step 3: Combine the 3 evaluation tables into 1 mega table
     combine_tables_video()
     combined_data = pd.read_csv("datasets/final/nus_video_eval.csv")
     insert_data("nus_video_eval", combined_data)
@@ -38,7 +38,7 @@ def main():
     random_forest_eval_convo = run_model_convo()
     print(random_forest_eval_convo)
 
-    # Step 5: Combine the 3 evaluation tables into 1 mega table
+    # # Step 5: Combine the 3 evaluation tables into 1 mega table
     combine_tables_convo()
     combined_data_2 = pd.read_csv("datasets/final/nus_convo_eval.csv")
     insert_data("nus_convo_eval", combined_data_2)
