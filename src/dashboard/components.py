@@ -10,6 +10,8 @@ from src.dashboard.data.data_handling import get_summary_metric_for_model, get_c
     get_graph_for_summary_metric, get_graph_for_real_time_component
 from src.dashboard.data.database import get_latest_dates_in_recommendation_table, get_individual_user_visualisation, \
     get_recommended_video_info, insert_model_feedback, get_model_ratings, get_upvote_percentage_for_day
+from src.dashboard.user_authen.authenticate_components import get_role_from_session_token
+
 
 def summary_metrics_component(entity, filtered_data, models):
     """
@@ -173,15 +175,16 @@ def user_feedback_component(recommended_item, model_list):
                 if feedback == '':
                     st.warning('Please enter feedback before submitting!')
                 else:
-                    # TODO add user id (and role?)
+                    # TODO add user id ?
                     if insert_model_feedback({'feedback': feedback, 'rating': rating, 'model': model,
-                                              'recommended_item': recommended_item}) == 0:
+                                              'recommended_item': recommended_item,
+                                              'role': get_role_from_session_token(st.session_state.session_token)}) == 0:
                         st.success('Feedback submitted!')
                     else:
                         st.warning('Error submitting feedback!')
 
     except Exception as e:
-        print('Error loading user feed back form: ', e)
+        print('Error loading user feedback form: ', e)
 
 def feedback_component(entity, filtered_data, models):
     model_rating_component(entity)

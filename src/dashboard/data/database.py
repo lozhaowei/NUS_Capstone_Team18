@@ -186,10 +186,10 @@ def insert_model_feedback(data):
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
 
-        insert_query = f"INSERT INTO nus_model_feedback (rating, feedback, model, recommended_item) " \
-                       f"VALUES ({data['rating']}, '{data['feedback']}', '{data['model']}', " \
-                       f"'{data['recommended_item']}')"
-
+        insert_query = f"INSERT INTO nus_model_feedback " \
+                       f"(rating, feedback, model, recommended_item, role) " \
+                       f"VALUES (%(rating)s, %(feedback)s, %(model)s, %(recommended_item)s, %(role)s)"
+        print(insert_query)
         cursor.execute(insert_query, data)
 
         conn.commit()
