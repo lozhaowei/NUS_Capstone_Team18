@@ -4,21 +4,75 @@ import hashlib
 import os
 import re
 import random
+import pymysql
 
 from streamlit_extras.switch_page_button import switch_page
 from captcha.image import ImageCaptcha
-from PIL import Image
+from src.data.make_datasets import pull_raw_data
 from src.dashboard.data.spark_pipeline import SparkPipeline
-
+from decouple import config
 
 # Define the path for the CSV file
-csv_file_path = "user_data.csv"
+csv_file_path = "datasets/final/user_data.csv"
+
+CONN_PARAMS = {
+    'host': config('DB_HOST'),
+    'user': config('DB_USER'),
+    'password': config('DB_PASSWORD'),
+    'port': int(config('DB_PORT')),
+    'database': config('DB_NAME'),
+}
+
+def insert_user_data(table_name, data):
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        # Convert 'username' column to string before insertion
+        data['username'] = data['username'].astype(str)
+        # Convert NaN values to None for proper insertion
+        data = data.where(pd.notna(data), None)
+
+        # Insert data only if the combination of 'dt' and 'model' is unique
+        for _, row in data.iterrows():
+            insert_query = f'''
+            INSERT INTO {table_name} (`username`, `email`, `password`, `role`) 
+            SELECT %s, %s, %s, %s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM {table_name} WHERE `username` = %s AND `email` = %s
+            )
+            '''
+            cursor.execute(insert_query, (row['username'], row['email'], row['password'], row['role'], row['username'], row['email']))
+
+        conn.commit()
+        conn.close()
+
+        print(f"Data updated in MySQL table '{table_name}' successfully.")
+
+    except Exception as e:
+        print("Error:", e)
+
 
 # Create an empty DataFrame to store user details or load from CSV if it exists
-if os.path.exists(csv_file_path):
+#pull_raw_data(['nus_user_data'])
+# If the table is not extracted/does not exist, use the local one instead, if local one also dont have, create a new table
+#if the table exists on AWS server, then a feather file will be created in datasets/raw
+if os.path.exists('datasets/raw/nus_user_data.feather'):
+    #read the data
+    user_data = pd.read_feather('datasets/raw/nus_user_data.feather')
+    if os.path.exists(csv_file_path):
+        user_data = pd.read_csv(csv_file_path)
+#if table does not exist on AWS server, we will check if it exists on the final file(which is a local saved copy)
+elif os.path.exists(csv_file_path):
+    print("retrieving local user_data file")
     user_data = pd.read_csv(csv_file_path)
+#if there isnt a file on both directory, then create a new empty table to store user data
 else:
+    print("new df")
     user_data = pd.DataFrame(columns=["username", "email", "password", "role"])
+
+print("inserting data")
+insert_user_data("nus_user_data", user_data)     
 
 # Function to hash passwords
 def hash_password(password):
@@ -29,6 +83,7 @@ def add_user(username, email, password, role):
     hashed_password = hash_password(password)
     user_data.loc[len(user_data)+1] = [username, email, hashed_password, role]
     user_data.to_csv(csv_file_path, index=False)  # Save to CSV
+    insert_user_data("nus_user_data", user_data)
     print("added")
 
 # Function to check user credentials
@@ -104,6 +159,7 @@ def user_update():
             if user_to_delete:
                 user_data.drop(user_data[user_data['username'] == user_to_delete].index, inplace=True)
                 user_data.to_csv(csv_file_path, index=False)
+                insert_user_data("nus_user_data", user_data)
                 st.success(f"User '{user_to_delete}' has been deleted.")
             else:
                 st.error("Please select a user to delete.")
@@ -122,6 +178,7 @@ def user_update():
             else:
                 st.write("Invalid Email")
         user_data.to_csv(csv_file_path, index=False)
+        insert_user_data("nus_user_data", user_data)
     elif action == "Update User Password":
         st.subheader("Change Password")
         search_string = st.text_input("Search user to update", "")
@@ -139,6 +196,7 @@ def user_update():
             else:
                 st.write("Please check the password fields are correct!")
         user_data.to_csv(csv_file_path, index=False)
+        insert_user_data("nus_user_data", user_data)
     elif action == "Update User Role":
         st.subheader("Update User Role")
         search_string = st.text_input("Search user to update", "")
@@ -151,6 +209,7 @@ def user_update():
             user_data.loc[user_index, "role"] = new_role
             st.success("User role successfully changed")
         user_data.to_csv(csv_file_path, index=False)
+        insert_user_data("nus_user_data", user_data)
         
     
 def sign_up():
