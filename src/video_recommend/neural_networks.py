@@ -1,179 +1,124 @@
-import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-from sklearn.model_selection import train_test_split
+import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import tensorflow as tf
-from tensorflow import keras
-from keras.models import Model
-from keras.layers import Input, Embedding, Flatten, Concatenate, Dense, Dropout, BatchNormalization
+from keras.models import Sequential, Model
+from keras.layers import Embedding, Flatten, concatenate, Dense, Input, Dropout
 from keras.optimizers import Adam
-from sklearn.metrics import mean_squared_error, accuracy_score, f1_score, recall_score, precision_score, roc_auc_score
-from sklearn.metrics import ndcg_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from datetime import datetime, timedelta
+from typing import Tuple
 
-def get_num_cycles(start_date: str) -> int:
-    # Get today's date
-    today_date = datetime.now().strftime('%Y-%m-%d')
-    start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
-    end_datetime = datetime.strptime(today_date, '%Y-%m-%d')
-    date_difference = (end_datetime - start_datetime).days
-    return date_difference
-
-def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    train_data = data[data[date_col] <= start_date]
-    test_data = data[(data[date_col] > start_date) & (data[date_col] <= get_end_date(start_date))]
-    return train_data, test_data
-
-def create_embedding_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame,
-                              video_df: pd.DataFrame, vote_df: pd.DataFrame, date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    user_interest_train, _ = train_test_split_for_data(user_interest_df, 'updated_at', date)
-    user_interest_train['count'] = 1
-    user_interest_matrix = user_interest_train.pivot(columns='name', index='user_id', values='count')
-    user_interest_matrix.fillna(0, inplace=True)
-
-    video_train, _ = train_test_split_for_data(video_df, 'created_at', date)
-    video_category = pd.merge(video_train[['id', 'season_id']], season_df[['id', 'category']],
-                              how='inner', left_on='season_id', right_on='id', suffixes=('_video_df', '_season_df'))
-    video_category['count'] = 1
-    video_category_matrix = video_category.pivot(columns='category', index='id_video_df', values='count')
-    video_category_matrix.fillna(0, inplace=True)
-    video_category_matrix = video_category_matrix.reindex(columns=user_interest_matrix.columns, fill_value=0)
-
-    vote_train, _ = train_test_split_for_data(vote_df, 'created_at', date)
-    vote_categories = pd.merge(vote_train[['video_id', 'voter_id', 'status']], video_category[['id_video_df', 'category']],
-                           how='left', left_on='video_id', right_on='id_video_df')
-    vote_categories['value'] = np.where(vote_categories['status'] == 'UPVOTE', 1, -1)
-    vote_categories = vote_categories.groupby(['voter_id', 'category'], as_index=False).agg({'value': 'sum'})
-    vote_categories_matrix = vote_categories.pivot(columns='category', index='voter_id', values='value')
-    vote_categories_matrix.fillna(0, inplace=True)
-    vote_categories_matrix = vote_categories_matrix.reindex(columns=user_interest_matrix.columns, fill_value=0)
-    user_interest_matrix = user_interest_matrix.reindex(index=vote_categories_matrix.index, fill_value=0)
-    user_interest_matrix = user_interest_matrix + vote_categories_matrix
-
-    return user_interest_matrix, video_category_matrix
-
-def hit_ratio_k(y_true, y_score, k=10):
-    top_k_indices = np.argsort(y_score)[-k:]
-    return int(np.any(y_true[top_k_indices]))
-
-def ndcg_k(y_true, y_score, k=10):
-    y_true = y_true.reshape(1, -1)
-    y_score = y_score.reshape(1, -1)
-    return ndcg_score(y_true, y_score, k=k)
-
-def build_ncf_model(hp):
-    user_input = Input(shape=(1, ))
-    user_embedding = Embedding(input_dim=len(all_user_ids), output_dim=hp.Int('user_embedding_dim', min_value=8, max_value=32))(user_input)
-    user_embedding = Flatten()(user_embedding)
-
-    video_input = Input(shape=(1,))
-    video_embedding = Embedding(input_dim=len(all_video_ids), output_dim=hp.Int('video_embedding_dim', min_value=8, max_value=32))(video_input)
-    video_embedding = Flatten()(video_embedding)
-
-    concat = Concatenate()([user_embedding, video_embedding])
-
-    # Add Batch Normalization after concatenation
-    concat = BatchNormalization()(concat)
-
-    # Add more hidden layers with dropout and batch normalization
-    fc1 = Dense(hp.Int('fc1_units', min_value=64, max_value=256, step=32), activation='relu')(concat)
-    fc1 = BatchNormalization()(fc1)
-    fc1 = Dropout(hp.Float('fc1_dropout', min_value=0.0, max_value=0.5))(fc1)
-
-    fc2 = Dense(hp.Int('fc2_units', min_value=32, max_value=128, step=16), activation='relu')(fc1)
-    fc2 = BatchNormalization()(fc2)
-    fc2 = Dropout(hp.Float('fc2_dropout', min_value=0.0, max_value=0.5))(fc2)
-
-    # Output layer
-    output = Dense(1, activation='sigmoid')(fc2)
-
-    model = Model(inputs=[user_input, video_input], outputs=output)
-    model.compile(optimizer=Adam(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2)),
-                  loss='binary_crossentropy', metrics=['accuracy'])
-
-    return model
-
-def run_model(start_date):
-
-    num_cycles = get_num_cycles(start_date)
-
+def run_ncf(start_date: str) -> pd.DataFrame:
+    # Load your data
     user_interest_df = pd.read_feather('datasets/raw/user_interest.feather')
     user_df = pd.read_feather('datasets/raw/user.feather')
     season_df = pd.read_feather('datasets/raw/season.feather')
     video_df = pd.read_feather('datasets/raw/video.feather')
     vote_df = pd.read_feather('datasets/raw/vote.feather')
-    results = []
 
-    for cycle in range(num_cycles):
-        date = (datetime.now() - timedelta(days=cycle)).strftime('%Y-%m-%d')
+    # Preprocessing steps (merging, label encoding, etc.)
+    # Merge user_interest_df, user_df, season_df, video_df, and vote_df
+    merged_df = pd.merge(user_interest_df, user_df, left_on='user_id', right_on='id', how='inner')
+    merged_df = pd.merge(merged_df, vote_df, left_on='user_id', right_on='voter_id', how='inner')
+    columns_to_remove = ['recce_status', 'created_at_x', 'id_x', 'type', 'age_consent', 'created_at_y', 'id_y', 'voter_id', 'timestamp', 'video_creator_id']
+    merged_df = merged_df.drop(columns=columns_to_remove)
+    merged_df = pd.merge(merged_df, season_df, left_on='season_id', right_on='id', how='inner')
+    merged_df = merged_df.drop(columns=['created_at_x', 'id', 'creator_id', 'season_number', 'contest_id', 'participant_count', 'description', 'recce_status', 'created_at_y'])
 
-        user_interest_matrix, video_category_matrix = create_embedding_matrices(user_interest_df, user_df, season_df, video_df, vote_df, date)
+    # Train-test split using the provided function
+    def get_end_date() -> str:
+        today = datetime.now()
+        end_date = (today - timedelta(weeks=2)).strftime('%Y-%m-%d')
+        return end_date
 
-        # Define constants and hyperparameters
-        BATCH_SIZE = 64
-        EPOCHS = 15
+    def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        train_data = data[data[date_col] <= start_date]
+        test_data = data[(data[date_col] > start_date) & (data[date_col] <= get_end_date())]
+        return train_data, test_data
 
-        # Create label encoders for user and video IDs
-        user_encoder = LabelEncoder()
-        video_encoder = LabelEncoder()
+    label_encoders = {}
+    for column in ['user_id', 'name', 'video_id', 'season_id', 'category', 'status']:
+        le = LabelEncoder()
+        merged_df[column] = le.fit_transform(merged_df[column])
+        label_encoders[column] = le
 
-        all_user_ids = np.concatenate([train_data[:, 0], val_data[:, 0], test_data[:, 0]])
-        all_video_ids = np.concatenate([train_data[:, 1], val_data[:, 1], test_data[:, 1]])
+    train_data, test_data = train_test_split_for_data(merged_df, 'updated_at', start_date)
 
-        user_encoder.fit(all_user_ids)
-        video_encoder.fit(all_video_ids)
+    user_input = Input(shape=(1,))
+    video_input = Input(shape=(1,))
 
-        # Transform user and video IDs
-        train_users = user_encoder.transform(train_data[:, 0])
-        train_videos = video_encoder.transform(train_data[:, 1])
-        val_users = user_encoder.transform(val_data[:, 0])
-        val_videos = video_encoder.transform(val_data[:, 1])
-        test_users = user_encoder.transform(test_data[:, 0])
-        test_videos = video_encoder.transform(test_data[:, 1])
+    user_embedding = Embedding(len(label_encoders['user_id'].classes_), 50)(user_input)
+    video_embedding = Embedding(len(label_encoders['video_id'].classes_), 50)(video_input)
 
-        # Build a Neural Collaborative Filtering Model
-        # model = build_ncf_model(user_interest_matrix.shape[0], video_category_matrix.shape[0])
+    user_flat = Flatten()(user_embedding)
+    video_flat = Flatten()(video_embedding)
 
-        tuner.search([train_users, train_videos], train_data[:, 2],
-                    batch_size=BATCH_SIZE,
-                    epochs=EPOCHS,
-                    validation_data=([val_users, val_videos], val_data[:, 2]))
+    concat = concatenate([user_flat, video_flat])
 
-        best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
-        model = build_ncf_model(best_hps)
+    # Adding Dropout layer for regularization
+    concat_dropout = Dropout(0.2)(concat)
 
-        # Train the model
-        history = model.fit(
-            [train_users, train_videos], train_data[:, 2],
-            batch_size=BATCH_SIZE,
-            epochs=EPOCHS,
-            validation_data=([val_users, val_videos], val_data[:, 2]),
-            verbose=1
-        )
+    dense1 = Dense(100, activation='relu')(concat_dropout)
 
-        # Evaluate the model
-        test_preds = model.predict([test_users, test_videos])
-        test_preds = test_preds.flatten()
-        accuracy = accuracy_score(test_data[:, 2], (test_preds > 0.5).astype(int))
-        precision = precision_score(test_data[:, 2], (test_preds > 0.3).astype(int))
-        recall = recall_score(test_data[:, 2], (test_preds > 0.3).astype(int))
-        f1 = f1_score(test_data[:, 2], (test_preds > 0.3).astype(int))
-        roc_auc = roc_auc_score(test_data[:, 2], test_preds)
-        hit_ratio = hit_ratio_k(test_data[:, 2], test_preds, k=10)
-        ndcg = ndcg_k(test_data[:, 2], test_preds, k=10)
+    # Output layer with softmax for multi-class classification
+    output = Dense(len(label_encoders['category'].classes_), activation='softmax')(dense1)
 
-        results.append({
-            'dt': date,
-            'roc_auc_score': roc_auc,
-            'accuracy': accuracy,
-            'precision': precision,
-            'recall': recall,
-            'f1_score': f1,
-            'hit_ratio_k': hit_ratio,
-            'ndcg_k': ndcg
-        })
+    model = Model(inputs=[user_input, video_input], outputs=output)
+    model.compile(loss='sparse_categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
 
-    results_df = pd.DataFrame(results)
-    results_df['model'] = 'ncf'
-    results_df = results_df.sort_values(by='dt', ascending=True)
-    results_df.to_csv('datasets/final/neural_networks_video.csv', index=False)
+    train_users = train_data['user_id']
+    train_videos = train_data['video_id']
+    train_labels = train_data['category']
+
+    test_users = test_data['user_id']
+    test_videos = test_data['video_id']
+    test_labels = test_data['category']
+
+    # Train the model with Dropout and Early Stopping
+    model.fit([train_users, train_videos], train_labels, epochs=50, batch_size=64, validation_split=0.2)
+
+    evaluation_results = []
+
+    for day in sorted(test_data['updated_at'].dt.date.unique()):
+        test_data_for_day = test_data[test_data['updated_at'].dt.date == day]
+        test_users_day = test_data_for_day['user_id']
+        test_videos_day = test_data_for_day['video_id']
+        test_labels_day = test_data_for_day['category']
+
+        predictions_day = model.predict([test_users_day, test_videos_day])
+        predicted_categories_day = np.argmax(predictions_day, axis=1)
+
+        try:
+            actual_categories_day = label_encoders['category'].inverse_transform(test_labels_day)
+            predicted_categories_day = label_encoders['category'].inverse_transform(predicted_categories_day)
+
+            accuracy_day = accuracy_score(actual_categories_day, predicted_categories_day)
+            precision_day = precision_score(actual_categories_day, predicted_categories_day, average='weighted')
+            recall_day = recall_score(actual_categories_day, predicted_categories_day, average='weighted')
+            f1_day = f1_score(actual_categories_day, predicted_categories_day, average='weighted')
+
+            # Appending evaluation metrics to the results
+            evaluation_results.append({
+                'dt': day,
+                'roc_auc_score': 0,  # placeholder
+                'accuracy': accuracy_day,
+                'precision': precision_day,
+                'recall': recall_day,
+                'f1_score': f1_day,
+                'hit_ratio_k': 0,  # placeholder
+                'ndcg_k': 0  # placeholder
+            })
+
+        except KeyError as e:
+            print(f"Skipping metric calculation for {day} due to unseen labels: {str(e)}")
+
+    # Convert the list of dictionaries to a pandas DataFrame
+    evaluation_df = pd.DataFrame(evaluation_results, columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
+
+    evaluation_df['model'] = 'ncf'
+
+    # Save the evaluation results to a CSV file
+    evaluation_df.to_csv('datasets/final/ncf_video.csv', index=False)
+
+    return evaluation_df
