@@ -21,8 +21,8 @@ def main():
     knn_eval_video = run_knn_recommender('2023-10-18', 10, get_num_cycles('2023-07-01'))
     print(knn_eval_video)
 
-    random_forest_eval_video = run_model()
-    print(random_forest_eval_video)
+    # random_forest_eval_video = run_model()
+    # print(random_forest_eval_video)
 
     run_svd_recommender('2023-07-01', 10, get_num_cycles('2023-07-01'))
 
