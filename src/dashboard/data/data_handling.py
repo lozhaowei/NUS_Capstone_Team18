@@ -2,8 +2,6 @@ import datetime
 
 import pandas as pd
 import plotly.express as px
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 
 def get_summary_metric_for_model(data, model, metric):
     model_data = data[data["model"] == model]
@@ -29,14 +27,6 @@ def filter_data(data, models):
 def get_graph_for_real_time_component(data, column):
     line_chart_data = data[[column] + ["dt"]].set_index("dt")
     line_chart_data = line_chart_data.apply(pd.to_numeric)
-
-    # fig = make_subplots(rows=len(columns), cols=1)
-
-    # for i in range(n):
-    #     fig.add_trace(go.Scatter(
-    #         x=line_chart_data.index,
-    #         y=line_chart_data[columns[i]]
-    #     ), row=i+1, col=1)
 
     fig = px.line(line_chart_data, x=line_chart_data.index, y=column, title=f"{column} Visualisation")
 
