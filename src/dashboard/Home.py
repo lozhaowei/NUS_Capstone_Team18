@@ -1,13 +1,14 @@
 import streamlit as st
-from user_authen.authenticate_components import authenticate, setupemptyprofile, get_role, check_login_status, \
-    generate_captcha, generate_session_token, \
-    get_role_from_session_token, get_username_from_session_token, login_with_remember_me
 
 st.set_page_config(layout="wide")
 
+from user_authen.authenticate_components import setupemptyprofile, get_role, check_login_status, \
+    generate_captcha, get_manager, \
+    login_with_remember_me, cookie_manager
+
 st.write("Welcome to the dashboard")
 
-st.header("Login")
+st.header(":violet[Login Page]")
 if "username" not in st.session_state or "role" not in st.session_state:
     setupemptyprofile()
 
@@ -21,21 +22,27 @@ with st.sidebar:
     st.text("")
     check_login_status()
 
+#st.write(cookie_manager.get_all())
+cookie_manager.get_all()
+
 if st.session_state.username is not None:
     st.write("You have already logged in. Click the side bar to sign out. Thank you!")
 else:
-    if "session_token" in st.session_state:
-        if st.session_state.session_token is not None:
-            print("b")
-            username = st.text_input("Username", value=get_username_from_session_token(st.session_state.session_token))
-            password = st.text_input("Password", type="password", value=st.session_state.password)
-            remember_me = st.checkbox(":green[Remember Me]")
-            if st.button("Login"):
-                st.session_state.username = get_username_from_session_token(st.session_state.session_token)
-                st.session_state.role = get_role_from_session_token(st.session_state.session_token)
-                st.success("Login successful!")
-                st.text("Welcome! You can now navigate through the different pages")
-        else:
+    #if remembered
+    username = cookie_manager.get(cookie="username")
+    #print(username)
+    if cookie_manager.get(cookie="username"):
+        st.write(f"Do you want to login to the account: {username}?")
+        if st.button(":green[Login]"):
+            st.session_state.username = username
+            st.session_state.role = get_role(username)
+            st.success("Login successful!")
+            st.text("Welcome! You can now navigate through the different pages")
+        if st.button(":orange[Login to another account]"):
+            st.warning("Your previously remembered account will be removed from cache")
+            cookie_manager.delete("username")
             login_with_remember_me()
+    #if not remembered, just go through the normal login process
     else:
         login_with_remember_me()
+
