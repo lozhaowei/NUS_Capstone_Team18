@@ -5,7 +5,9 @@ import os
 import re
 import random
 import pymysql
+import datetime
 
+import extra_streamlit_components as stx
 from streamlit_extras.switch_page_button import switch_page
 from captcha.image import ImageCaptcha
 from src.data.make_datasets import pull_raw_data
@@ -291,23 +293,29 @@ def get_role_from_session_token(session_token):
     except Exception as e:
         return None
 
+@st.cache_data()
+
+def get_manager():
+    return stx.CookieManager()
+
+cookie_manager = get_manager()
+
 def login_with_remember_me():
-    username = st.text_input("Username")
+    username = st.text_input("Username", key="unique username")
     password = st.text_input("Password", type="password")
-    remember_me = st.checkbox(":green[Remember Me]")
-    if st.button("Login"):
+    remember_me = st.checkbox(":green[Remember Me]", key="unique remember me")
+    
+    if st.button("✅Login"):
         if remember_me:
-            session_token = generate_session_token(username, get_role(username))
-            st.session_state.session_token = session_token
+            cookie_manager.set("username", username, expires_at=(datetime.date.today() + datetime.timedelta(days=7)))
+            #cookie_manager.set(username, username, expires_at=datetime.datetime(year=2023, month=11, day=3))
+
         #print(captcha, original_text, captcha_image)
         #if captcha == original_text:
         
         if authenticate(username, password):
-            if not remember_me:
-                st.session_state.session_token = None
             st.session_state.username = username
             st.session_state.role = get_role(username)
-            st.session_state.password = password
             st.success("Login successful!")
             st.text("Welcome! You can now navigate through the different pages")
 
