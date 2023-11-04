@@ -28,6 +28,30 @@ def insert_data(table_name, data):
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
 
+        # Check if the table exists
+        table_exists_query = f"SHOW TABLES LIKE '{table_name}'"
+        cursor.execute(table_exists_query)
+        table_exists = cursor.fetchone()
+
+        if not table_exists:
+            # If the table doesn't exist, create a new table with specified columns
+            create_table_query = f'''
+            CREATE TABLE {table_name} (
+                `dt` DATE,
+                `roc_auc_score` FLOAT,
+                `accuracy` FLOAT,
+                `precision` FLOAT,
+                `recall` FLOAT,
+                `f1_score` FLOAT,
+                `hit_ratio_k` FLOAT,
+                `ndcg_k` FLOAT,
+                `model` VARCHAR(255),
+                PRIMARY KEY (`dt`, `model`)
+            )
+            '''
+            cursor.execute(create_table_query)
+            print(f"Table '{table_name}' created successfully.")
+
         # Convert 'dt' column to string before insertion
         data['dt'] = data['dt'].astype(str)
         # Convert NaN values to None for proper insertion
@@ -41,6 +65,14 @@ def insert_data(table_name, data):
             WHERE NOT EXISTS (
                 SELECT 1 FROM {table_name} WHERE `dt` = %s AND `model` = %s
             )
+            ON DUPLICATE KEY UPDATE
+            `roc_auc_score` = VALUES(`roc_auc_score`),
+            `accuracy` = VALUES(`accuracy`),
+            `precision` = VALUES(`precision`),
+            `recall` = VALUES(`recall`),
+            `f1_score` = VALUES(`f1_score`),
+            `hit_ratio_k` = VALUES(`hit_ratio_k`),
+            `ndcg_k` = VALUES(`ndcg_k`)
             '''
             cursor.execute(insert_query, (row['dt'], row['roc_auc_score'], row['accuracy'], row['precision'],
                                          row['recall'], row['f1_score'], row['hit_ratio_k'], row['ndcg_k'],
