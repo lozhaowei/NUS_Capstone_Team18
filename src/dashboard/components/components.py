@@ -39,7 +39,7 @@ def real_time_data_visualisation_component_old():
         col1, col2 = st.columns([0.9, 0.1])
         col1.subheader("Latest Model Metrics")
         date = col2.selectbox("Select Date", dates["dates"].unique())
-        data = get_upvote_percentage_for_day('rs_daily_video_for_user', date)
+        data = get_upvote_percentage_for_user('rs_daily_video_for_user', date)
 
         col1, col2 = st.columns(2)
         col1.metric("Average Upvoted Percentage", format(data["upvote_percentage"].mean(), ".1%"))
