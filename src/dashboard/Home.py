@@ -3,8 +3,7 @@ import streamlit as st
 st.set_page_config(layout="wide")
 
 from user_authen.authenticate_components import setupemptyprofile, get_role, check_login_status, \
-    generate_captcha, get_manager, \
-    login_with_remember_me, cookie_manager
+    generate_captcha, get_manager, login_with_remember_me, cookie_manager
 
 st.write("Welcome to the dashboard")
 
