@@ -87,10 +87,11 @@ def get_graph_for_summary_metric(filtered_data, freq, models, metrics):
         rangeslider=dict(visible=True)
     )
 
-    date_iterator = line_chart_data.index[0] # TODO: Change to the first retraining date applicable
-    while date_iterator <= line_chart_data.index[-1]:
-        fig.add_vline(x=date_iterator, line_dash="dash", line_color="red")
-        date_iterator += datetime.timedelta(days=3)
+    if freq == "D":
+        date_iterator = line_chart_data.index[0] # TODO: Change to the first retraining date applicable
+        while date_iterator <= line_chart_data.index[-1]:
+            fig.add_vline(x=date_iterator, line_dash="dash", line_color="red")
+            date_iterator += datetime.timedelta(days=3)
 
     fig.update_layout(
         autosize=True
