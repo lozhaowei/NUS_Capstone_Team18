@@ -73,20 +73,20 @@ def real_time_data_visualisation_component_old():
 
 def real_time_data_visualisation_component(entity, filtered_data, models):
     try:
-        data = get_upvote_percentage_for_day()
+        table_name = "nus_rs_video_upvote" if entity == "video" else "nus_rs_conversation_like"
+        data = get_upvote_percentage_for_day(table_name)
         st.subheader("Visualisation of Recommendations Generated")
 
         col1, col2, col3 = st.columns([0.3, 0.3, 0.4])
         start_date = col1.date_input("Start Date", value=min(data["dt"]), min_value=min(data["dt"]), max_value=max(data["dt"]))
         end_date = col2.date_input("End Date", value=max(data["dt"]), min_value=min(data["dt"]), max_value=max(data["dt"]))
-        columns = col3.multiselect("Metrics", options=["upvoted_videos", "number_recommended", "upvote_percentage"],
-                                   default="upvote_percentage")
+
+        available_metrics = [column for column in data.columns if column != "dt"]
+        columns = col3.multiselect("Metrics", options=available_metrics,
+                                   default=available_metrics[0])
 
         data = data[(data["dt"] >= start_date) & (data["dt"] <= end_date)]
         
-
-        # fig = get_graph_for_real_time_component(data, columns)
-        # st.plotly_chart(fig, use_container_width=True)
         for column in columns:
             fig = get_graph_for_real_time_component(data, column)
             st.plotly_chart(fig, use_container_width=True)
