@@ -1,5 +1,7 @@
 import streamlit as st
 
+from src.dashboard.data.spark_pipeline import SparkPipeline
+
 st.set_page_config(layout="wide")
 
 from user_authen.authenticate_components import setupemptyprofile, get_role, check_login_status, \
@@ -38,6 +40,13 @@ else:
             st.session_state.role = get_role(username)
             st.success("Login successful!")
             st.text("Welcome! You can now navigate through the different pages")
+
+            # Run query recommended item hit ratio functions
+            spark_pipeline = SparkPipeline()
+            spark_pipeline.initialize_spark_session()
+            spark_pipeline.run_video_upvote_percentage_pipeline()
+            spark_pipeline.run_conversation_like_percentage_pipeline()
+            spark_pipeline.close_spark_session()
         if st.button(":orange[Login to another account]"):
             st.warning("Your previously remembered account will be removed from cache")
             cookie_manager.delete("username")
@@ -45,4 +54,3 @@ else:
     #if not remembered, just go through the normal login process
     else:
         login_with_remember_me()
-
