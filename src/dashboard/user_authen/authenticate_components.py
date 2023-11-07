@@ -212,7 +212,22 @@ def user_update():
             st.success("User role successfully changed")
         user_data.to_csv(csv_file_path, index=False)
         insert_user_data("nus_user_data", user_data)
-        
+
+def change_password():
+    st.subheader("Change Password")
+    user_to_update = st.session_state.username
+    old_password = st.text_input("Old Password")
+    new_password = st.text_input("New Password")
+    new_password2 = st.text_input("Confirm New Password")
+    user_index = user_data[user_data['username'] == user_to_update].index
+    if st.button("Update"):
+        if is_strong_password(new_password2) and new_password == new_password2 and authenticate(user_to_update, old_password):
+            user_data.loc[user_index, "password"] = hash_password(new_password2)
+            st.success("Password successfully changed")
+        else:
+            st.write("Please check the password fields are correct!")
+    user_data.to_csv(csv_file_path, index=False)
+    insert_user_data("nus_user_data", user_data)
     
 def sign_up():
     with st.form(key = "Create User", clear_on_submit=True):
@@ -293,7 +308,7 @@ def get_role_from_session_token(session_token):
     except Exception as e:
         return None
 
-@st.cache_data()
+#@st.cache_data()
 
 def get_manager():
     return stx.CookieManager()
@@ -305,14 +320,11 @@ def login_with_remember_me():
     password = st.text_input("Password", type="password")
     remember_me = st.checkbox(":green[Remember Me]", key="unique remember me")
     
-    if st.button("✅Login"):
+    if st.button("Login"):
         if remember_me:
-            cookie_manager.set("username", username, expires_at=(datetime.date.today() + datetime.timedelta(days=7)))
-            #cookie_manager.set(username, username, expires_at=datetime.datetime(year=2023, month=11, day=3))
+            if authenticate(username, password):
+                cookie_manager.set("username", username, expires_at=(datetime.date.today() + datetime.timedelta(days=7)))
 
-        #print(captcha, original_text, captcha_image)
-        #if captcha == original_text:
-        
         if authenticate(username, password):
             st.session_state.username = username
             st.session_state.role = get_role(username)
@@ -325,4 +337,4 @@ def login_with_remember_me():
             spark_pipeline.run_video_upvote_percentage_pipeline()
             spark_pipeline.close_spark_session()
         else:
-            st.error("Login failed. Please check your credentials and/or your CAPTCHA.")
+            st.error("Login failed. Please check your credentials.")
