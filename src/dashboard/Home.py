@@ -11,12 +11,6 @@ st.header(":violet[Login Page]")
 if "username" not in st.session_state or "role" not in st.session_state:
     setupemptyprofile()
 
-# maybe do some if statement here so that it is only accessed once????? nt sure
-# original_text, captcha_image = generate_captcha()
-# st.write(original_text)
-# st.image(captcha_image)
-# captcha = st.text_input("Enter the letters that you see.").upper()
-
 with st.sidebar:
     st.text("")
     check_login_status()
