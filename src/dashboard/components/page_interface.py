@@ -19,42 +19,9 @@ def page(entity, title):
                               default=element_list)
     mapping = function_mapping()
 
-    hide_sidebar = st.checkbox("Hide Sidebar")
-
-    if hide_sidebar:
-        st.markdown(
-            """
-            <style>
-                [class="css-vk3wp9 eczjsme11"] {
-                    display: none
-                }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
     for element in elements:
         st.divider()
         if element == "User Feedback":
             mapping[element](entity, model_list)
         else:
             mapping[element](entity, filtered_data, models)
-
-        # if "Summary Metrics" in elements:
-        #     summary_metrics_component(filtered_data, models)
-        #     st.divider()
-
-        # if "Real Time Data" in elements:
-        #     real_time_data_visualisation_component()
-        #     st.divider()
-
-        # if "Historical Chart" in elements:
-        #     historical_chart = historical_retraining_data_visualisation_component(filtered_data, models)
-        #     st.divider()
-
-        # # user feedback
-        # if "User Feedback" in elements:
-        #     model_rating_component('video')
-        #     user_feedback_component('video', model_list)
-
-        # generate_pdf_component(filtered_data, models, historical_chart)

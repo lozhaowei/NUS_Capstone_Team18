@@ -33,13 +33,13 @@ def get_dashboard_data(entity):
     except Exception as e:
         print("Error:", e)
 
-def get_upvote_percentage_for_day():
+def get_upvote_percentage_for_day(table_name):
     try:
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
 
         query = f"""
-        SELECT * FROM nus_rs_video_upvote;
+        SELECT * FROM {table_name};
         """
 
         cursor.execute(query)

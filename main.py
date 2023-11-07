@@ -3,7 +3,7 @@ from src.data.database import query_database, insert_data, CONN_PARAMS, combine_
 from src.data.make_datasets import pull_raw_data
 from src.video_recommend.knn import run_knn_recommender,get_num_cycles
 from src.video_recommend.svd import run_svd_recommender
-from src.video_recommend.random_forest import run_model
+from src.video_recommend.random_forest import run_random_forest
 from src.video_recommend.neural_networks import run_ncf
 from src.conversation_recommend.cosine_similarity import run_collaborative_recommender
 from src.conversation_recommend.random_forest_convo import run_model_convo
@@ -21,8 +21,10 @@ def main():
     knn_eval_video = run_knn_recommender('2023-07-01', 10, get_num_cycles('2023-07-01'))
     print(knn_eval_video)
 
-    random_forest_eval_video = run_model()
+
+    random_forest_eval_video = run_random_forest('2023-07-01', 10, get_num_cycles('2023-07-01'))
     print(random_forest_eval_video)
+
 
     run_svd_recommender('2023-07-01', 10, get_num_cycles('2023-07-01'))
 
@@ -45,10 +47,7 @@ def main():
     combine_tables_convo()
     combined_data_2 = pd.read_csv("datasets/final/nus_convo_eval.csv")
     insert_data("nus_convo_eval", combined_data_2)
-
-    # get dashboard metrics (commented out because i transferred this directly to the dashboard)
-    # get_dashboard_data()
-
+    
 if __name__ == "__main__":
     main()
     schedule.every().day.at("00:32").do(main)
