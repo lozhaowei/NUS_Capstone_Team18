@@ -20,7 +20,6 @@ CONN_PARAMS = {
     'port': int(config('DB_PORT')),
     'database': config('DB_NAME'),
 }
-
 def get_end_date() -> str:
     # Calculate end date as 2 weeks before today
     today = datetime.now()
@@ -36,19 +35,14 @@ def get_num_cycles(start_date: str) -> int:
 
     return date_difference
 
-def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    train_data = data[data[date_col] <= start_date,]
-    test_data = data[(data[date_col] > start_date) & (data[date_col] > get_end_date())]
-    return train_data, test_data
-
-def create_interaction_df(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
-                              video_df: pd.DataFrame, vote_df: pd.DataFrame, date: datetime) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def create_df(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
+                              video_df: pd.DataFrame, vote_df: pd.DataFrame, date: datetime):
     user_interest_df = user_df["id"].to_frame().merge(user_interest_df, left_on="id", right_on="user_id", how="left", suffixes=["_user", "_interaction"])
     user_interest_df["count"] = 1
     user_interest_df = user_interest_df.pivot(index="id", columns="name", values="count")
     user_interest_df = user_interest_df.loc[:, user_interest_df.columns.notna()].fillna(0)
 
-    upvotes_df = vote_df[vote_df["created_at"] > datetime.strptime(date, '%Y-%m-%d') - timedelta(weeks=1)].groupby(["voter_id", "video_id"])["id"].nunique().reset_index(name="upvotes")
+    upvotes_df = vote_df[(vote_df["created_at"] > date - timedelta(weeks=1)) & (vote_df["created_at"] <= date)].groupby(["voter_id", "video_id"])["id"].nunique().reset_index(name="upvotes")
     upvotes_df = upvotes_df.merge(video_df[["id", "season_id", "created_at"]], left_on="video_id", right_on="id", how="left", suffixes=["", "_video"])
 
     upvotes_category_df = upvotes_df.merge(season_df[["id", "category"]], left_on="season_id", right_on="id", how="left", suffixes=["_video", "_season"])
@@ -56,37 +50,36 @@ def create_interaction_df(user_interest_df: pd.DataFrame, user_df: pd.DataFrame,
     upvotes_category_df["CRYPTO"] = 0
     upvotes_category_df["FINANCE"] = 0
 
-    user_interest_df = user_interest_df.add(upvotes_category_df, fill_value=0)
+    user_interest_df = user_interest_df.map(lambda x: x*0.4).add(upvotes_category_df.map(lambda x: x*0.6), fill_value=0)
     user_interest_df.reset_index(names="user_id", inplace=True)
+    user_interest_df = user_interest_df[user_interest_df.loc[:, user_interest_df.columns != "user_id"].sum(1) > 0]
 
     interaction_df = user_interest_df.merge(upvotes_df[["voter_id", "video_id", "upvotes"]], left_on="user_id", right_on="voter_id", how="left", suffixes=["_user", "_upvotes"])
     interaction_df.drop(columns="voter_id", inplace=True)
-    no_likes = interaction_df[interaction_df["video_id"].isna()]
     interaction_df.dropna(subset="video_id", axis=0, inplace=True)
+    
+    video_category_df = video_df[["id", "created_at", "season_id"]].merge(season_df[["id", "category"]], left_on="season_id", right_on="id", how="left", suffixes=["_video", "_season"])
 
-    no_likes = no_likes.drop(columns=["video_id"]).merge(pd.DataFrame(interaction_df["video_id"].unique(), columns=["video_id"]), how="cross", suffixes=["_no_like", ""])
-    no_likes = no_likes.merge(video_df[["id", "created_at", "season_id"]], left_on="video_id", right_on="id", how="left")
-    no_likes = no_likes.merge(season_df[["id", "category"]], left_on="season_id", right_on="id", how="left", suffixes=["_video", "_season"])
-    no_likes.drop(columns=["id_video", "season_id", "id_season"], inplace=True)
-    no_likes.set_index(["user_id", "video_id"], inplace=True)
-    no_likes = no_likes[(no_likes["created_at"] > datetime.strptime(date, '%Y-%m-%d') - timedelta(weeks=1)) & (no_likes["created_at"] <= date)]
-
-    interaction_df = interaction_df.merge(video_df[["id", "created_at", "season_id"]], left_on="video_id", right_on="id", how="left")
-    interaction_df = interaction_df.merge(season_df[["id", "category"]], left_on="season_id", right_on="id", how="left", suffixes=["_video", "_season"])
+    interaction_df = interaction_df.merge(video_category_df, left_on="video_id", right_on="id_video", how="left")
     interaction_df.drop(columns=["id_video", "season_id", "id_season"], inplace=True)
     interaction_df.set_index(["user_id", "video_id"], inplace=True)
-
-    interaction_df = pd.concat([interaction_df, no_likes])
+    
+    test_df = user_interest_df.merge(video_category_df[(video_category_df["created_at"] > date) & (video_category_df["created_at"] <= get_end_date())], how="cross")
+    test_df.drop(columns=["season_id", "id_season"], inplace=True)
+    test_df.rename(columns={"id_video": "video_id"}, inplace=True)
+    test_df.set_index(["user_id", "video_id"], inplace=True)
 
     enc = OrdinalEncoder(encoded_missing_value=-1)
-    enc.fit(interaction_df["category"].to_frame())
+    enc.fit(video_category_df["category"].to_frame())
     interaction_df["category"] = enc.transform(interaction_df["category"].to_frame())
+    test_df["category"] = enc.transform(test_df["category"].to_frame())
     interaction_df.fillna(0, inplace=True)
+    test_df.fillna(0, inplace=True)
     
-    return interaction_df
+    return interaction_df, test_df
 
 def find_top_k_videos(user_id, k, prediction_df):
-    return prediction_df.nlargest(k, "prediction")
+    return prediction_df[prediction_df.index.get_level_values("user_id") == user_id].nlargest(k, "prediction")
 
 def hit_ratio_at_k(y_true, y_pred, K):
     top_k_indices = np.argsort(-np.array(y_pred))[:K]
@@ -97,16 +90,15 @@ def ndcg_at_k(y_true, y_pred, K):
     y_pred = np.array(y_pred) 
     return ndcg_score([y_true], [y_pred], k=K)
 
-def get_summary_statistics(vote_df, interaction_df, date, K):
-    train_df, test_df = train_test_split_for_data(interaction_df, 'created_at', date)
+def get_summary_statistics(vote_df, train_df, test_df, date, K):
     train_df.drop(columns="created_at", inplace=True)
     test_df.drop(columns="created_at", inplace=True)
-    _, vote_test = train_test_split_for_data(vote_df, 'created_at', date)
+    vote_test = vote_df[vote_df["created_at"] > date]
     vote_test['created_at'] = vote_test['created_at'].dt.date
     model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
     model = RandomForestClassifier()
     model.fit(train_df.loc[:, train_df.columns != "upvotes"], train_df["upvotes"])
-    test_df["prediction"] = model.predict(test_df.loc[:, test_df.columns != "upvotes"])
+    test_df["prediction"] = model.predict(test_df)
 
     for day in sorted(vote_test['created_at'].unique()):
         print(day)
@@ -114,11 +106,12 @@ def get_summary_statistics(vote_df, interaction_df, date, K):
         summary_statistics = pd.DataFrame(columns=['user_id', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
 
         for user_id in voted_videos_for_day['voter_id'].unique():
-            if user_id not in train_df.index:
+            user_voted_videos = voted_videos_for_day[voted_videos_for_day['voter_id'] == user_id]
+            
+            if user_id not in train_df.index or len(set(user_voted_videos["video_id"]) & set(test_df.index.get_level_values("video_id"))) == 0:
                 continue
             
-            # create dataframe to calculate confusion matrix
-            user_voted_videos = voted_videos_for_day[voted_videos_for_day['voter_id'] == user_id]
+#             create dataframe to calculate confusion matrix
             y_true_and_pred = pd.DataFrame(index=test_df.index.get_level_values("video_id"))
             y_true_and_pred['true'] = np.where(y_true_and_pred.index.isin(user_voted_videos['video_id']), 1, 0)
 
@@ -149,10 +142,12 @@ def run_random_forest(date, K, num_cycles):
     video_df = pd.read_feather('datasets/raw/video.feather')
     vote_df = pd.read_feather('datasets/raw/vote.feather')
 
+    date = pd.to_datetime(date)
+
     model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
     # for cycle in range(num_cycles):
-    interaction_df = create_interaction_df(user_interest_df, user_df, season_df, video_df, vote_df, date)
-    model_statistics_for_training_cycle = get_summary_statistics(vote_df, interaction_df, date, K)
+    train_df, test_df = create_df(user_interest_df, user_df, season_df, video_df, vote_df, date)
+    model_statistics_for_training_cycle = get_summary_statistics(vote_df, train_df, test_df, date, K)
     model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
     # date = get_end_date()
 
