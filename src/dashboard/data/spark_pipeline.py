@@ -158,6 +158,12 @@ class SparkPipeline:
             print(f"Time taken: {t1 - t0:.2f} seconds")
 
     def get_max_date(self, table_name):
+        """
+        helper function
+        queries table to obtain the latest date
+        :param table_name:
+        :return: latest date
+        """
         max_date = self.spark.read \
             .format("jdbc") \
             .option("driver", "com.mysql.cj.jdbc.Driver") \
