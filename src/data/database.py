@@ -87,15 +87,15 @@ def insert_data(table_name, data):
         print("Error:", e)
 
 def combine_tables_video():
-    table1 = pd.read_csv('datasets/final/random_forest_video.csv')
-    table2 = pd.read_csv('datasets/final/knn_video.csv')
-    table3 = pd.read_csv('datasets/final/svd_video.csv')
-    table4 = pd.read_csv('datasets/final/ncf_video.csv')
+    table1 = pd.read_csv('datasets/final_new/random_forest_video.csv')
+    table2 = pd.read_csv('datasets/final_new/knn_video.csv')
+    table3 = pd.read_csv('datasets/final_new/svd_video.csv')
+    # table4 = pd.read_csv('datasets/final_new/ncf_video.csv')
 
     # Combine tables
-    combined_table = pd.concat([table1, table2, table3, table4], ignore_index=True)
+    combined_table = pd.concat([table1, table2, table3], ignore_index=True)
 
-    output_folder = 'datasets/final'
+    output_folder = 'datasets/final_new'
     os.makedirs(output_folder, exist_ok=True)
     output_path = os.path.join(output_folder, "nus_video_eval.csv")
     combined_table.to_csv(output_path, index=False)

@@ -25,7 +25,7 @@ CONN_PARAMS = {
 def get_end_date() -> str:
     # Calculate end date as 2 weeks before today
     today = datetime.now()
-    end_date = (today - timedelta(weeks=2)).strftime('%Y-%m-%d')
+    end_date = (today - timedelta(weeks=1)).strftime('%Y-%m-%d')
     return end_date
 
 
@@ -183,7 +183,7 @@ def run_svd_recommender(date, K, num_cycles):
         date = get_end_date()
 
     model_statistics['model'] = 'svd'
-    model_statistics.to_csv('datasets/final/svd_video.csv', index=False)
+    model_statistics.to_csv('datasets/final_new/svd_video.csv', index=False)
 
 
 
