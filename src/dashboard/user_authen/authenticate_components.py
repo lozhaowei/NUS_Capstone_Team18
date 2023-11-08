@@ -335,6 +335,7 @@ def login_with_remember_me():
             spark_pipeline = SparkPipeline()
             spark_pipeline.initialize_spark_session()
             spark_pipeline.run_video_upvote_percentage_pipeline()
+            spark_pipeline.run_conversation_like_percentage_pipeline()
             spark_pipeline.close_spark_session()
         else:
             st.error("Login failed. Please check your credentials.")
