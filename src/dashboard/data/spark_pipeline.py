@@ -126,7 +126,7 @@ class SparkPipeline:
                                                 ON rdc.recommended_conversation_id = c.conversation_id
                                                     AND rdc.user_id = c.like_giver_id) t1
     --                             WHERE rdc_created_at >= (CURRENT_DATE - INTERVAL 7 DAY)
-                                WHERE rdc_created_at >= ('2023-10-25' - INTERVAL 2 DAY)
+                                WHERE rdc_created_at >= ('2023-10-25' - INTERVAL 7 DAY)
                         ) t2
                         GROUP BY DATE(rdc_created_at)
                     """
