@@ -1,11 +1,10 @@
 import streamlit as st
 
 from src.dashboard.data.spark_pipeline import SparkPipeline
-
-st.set_page_config(layout="wide")
-
 from user_authen.authenticate_components import setupemptyprofile, get_role, check_login_status, \
     generate_captcha, get_manager, login_with_remember_me, cookie_manager
+
+st.set_page_config(layout="wide")
 
 st.write("Welcome to the dashboard")
 
@@ -17,15 +16,15 @@ with st.sidebar:
     st.text("")
     check_login_status()
 
-#st.write(cookie_manager.get_all())
+# st.write(cookie_manager.get_all())
 cookie_manager.get_all()
 
 if st.session_state.username is not None:
     st.write("You have already logged in. Click the side bar to sign out. Thank you!")
 else:
-    #if remembered
+    # if remembered
     username = cookie_manager.get(cookie="username")
-    #print(username)
+    # print(username)
     if cookie_manager.get(cookie="username"):
         st.write(f"Do you want to login to the account: {username}?")
         if st.button(":green[Login]"):
@@ -44,6 +43,6 @@ else:
             st.warning("Your previously remembered account will be removed from cache")
             cookie_manager.delete("username")
             login_with_remember_me()
-    #if not remembered, just go through the normal login process
+    # if not remembered, just go through the normal login process
     else:
         login_with_remember_me()
