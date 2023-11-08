@@ -97,7 +97,7 @@ def combine_tables_video():
 
     output_folder = 'datasets/final_new'
     os.makedirs(output_folder, exist_ok=True)
-    output_path = os.path.join(output_folder, "nus_video_eval.csv")
+    output_path = os.path.join(output_folder, "nus_video_eval_2.csv")
     combined_table.to_csv(output_path, index=False)
     
     print(f"Combined data saved to '{output_path}' successfully.")
