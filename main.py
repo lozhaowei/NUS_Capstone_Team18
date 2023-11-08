@@ -35,7 +35,7 @@ def main():
     # run_ncf('2023-08-14')
     
     # Step 7: Combine the 4 evaluation tables into 1 mega table
-    # combine_tables_video()
+    combine_tables_video()
     combined_data = pd.read_csv("datasets/final_new/nus_video_eval_2.csv")
 
     # Step 8: Send the combined table into the DB
