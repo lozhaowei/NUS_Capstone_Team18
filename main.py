@@ -18,18 +18,18 @@ def main():
     #                 'user', 'user_interest', 'video', 'vote'])
 
     # Step 2: pull video datasets
-    # pull_raw_video_data(['post_feed', 'season', 'user', 'user_interest', 'video', 'vote'])
+    pull_raw_video_data(['post_feed', 'season', 'user', 'user_interest', 'video', 'vote'])
 
     # Step 3: Run KNN (Video) Model
-    # knn_eval_video = run_knn_recommender('2023-08-14', 3, get_num_cycles('2023-08-14'))
-    # print(knn_eval_video)
+    knn_eval_video = run_knn_recommender('2023-08-14', 3, get_num_cycles('2023-08-14'))
+    print(knn_eval_video)
 
     # Step 4: Run Random Forest (Video) Model
-    # random_forest_eval_video = run_random_forest('2023-08-14', 10, get_num_cycles('2023-08-14'))
-    # print(random_forest_eval_video)
+    random_forest_eval_video = run_random_forest('2023-08-14', 10, get_num_cycles('2023-08-14'))
+    print(random_forest_eval_video)
 
     # Step 5: Run SVD (Video) Model
-    # run_svd_recommender('2023-08-14', 10, get_num_cycles('2023-08-14'))
+    run_svd_recommender('2023-08-14', 10, get_num_cycles('2023-08-14'))
 
     # Step 6: Run NCF (Video) Model
     # run_ncf('2023-08-14')
