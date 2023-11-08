@@ -47,10 +47,13 @@ def main():
     combine_tables_convo()
     combined_data_2 = pd.read_csv("datasets/final/nus_convo_eval.csv")
     insert_data("nus_convo_eval", combined_data_2)
-    
+
+    # get dashboard metrics (commented out because i transferred this directly to the dashboard)
+    # get_dashboard_data()
+
 if __name__ == "__main__":
     main()
-    schedule.every().day.at("00:32").do(main)
+    schedule.every().day.at("21:46").do(main)
 
 while True:
     schedule.run_pending()
