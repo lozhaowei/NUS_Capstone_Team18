@@ -3,7 +3,7 @@ import warnings
 from typing import Tuple
 from datetime import datetime, timedelta
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, ndcg_score
 import numpy as np
 import random
@@ -60,7 +60,7 @@ def create_df(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: 
     test_df.rename(columns={"id_video": "video_id"}, inplace=True)
     test_df.set_index(["user_id", "video_id"], inplace=True)
 
-    enc = OrdinalEncoder(encoded_missing_value=-1)
+    enc = LabelEncoder(encoded_missing_value=-1)
     enc.fit(video_category_df["category"].to_frame())
     interaction_df["category"] = enc.transform(interaction_df["category"].to_frame())
     test_df["category"] = enc.transform(test_df["category"].to_frame())
