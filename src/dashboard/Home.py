@@ -1,7 +1,7 @@
 import streamlit as st
 
 from src.dashboard.data.spark_pipeline import SparkPipeline
-from user_authen.authenticate_components import setupemptyprofile, get_role, check_login_status, \
+from user_authen.authenticate_components import set_up_empty_profile, get_role, check_login_status, \
     generate_captcha, get_manager, login_with_remember_me, cookie_manager
 
 st.set_page_config(layout="wide")
@@ -10,7 +10,7 @@ st.write("Welcome to the dashboard")
 
 st.header(":violet[Login Page]")
 if "username" not in st.session_state or "role" not in st.session_state:
-    setupemptyprofile()
+    set_up_empty_profile()
 
 with st.sidebar:
     st.text("")

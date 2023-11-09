@@ -2,7 +2,7 @@ import streamlit as st
 
 from src.dashboard.data.data_handling import filter_data
 from src.dashboard.data.database import get_dashboard_data
-from src.dashboard.components.components import function_mapping
+from src.dashboard.components.components import component_mapping
 
 def page(entity, title):
     data = get_dashboard_data(entity).reset_index(drop=True)
@@ -17,7 +17,7 @@ def page(entity, title):
     elements = st.multiselect("Choose the elements that you want to show",
                               options=element_list,
                               default=element_list)
-    mapping = function_mapping()
+    mapping = component_mapping()
 
     for element in elements:
         st.divider()

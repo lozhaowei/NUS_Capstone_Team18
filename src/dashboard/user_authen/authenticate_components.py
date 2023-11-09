@@ -125,15 +125,17 @@ def get_password(username):
     return user.iloc[0]["password"]
 
 def check_login_status():
-    if st.session_state.username is not None:
+    if 'username' not in st.session_state:
+        set_up_empty_profile()
+    elif st.session_state.username is not None:
         if st.sidebar.button("Log Out"):
-            setupemptyprofile()
+            set_up_empty_profile()
             st.success("Logged out successfully!")
     else:
         if st.sidebar.button("Log In"):
             switch_page("Home")
 
-def setupemptyprofile():
+def set_up_empty_profile():
     st.session_state.username = None
     st.session_state.role = None
 
