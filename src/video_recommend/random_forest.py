@@ -26,15 +26,6 @@ def get_end_date() -> str:
     end_date = (today - timedelta(weeks=2)).strftime('%Y-%m-%d')
     return end_date
 
-def get_num_cycles(start_date: str) -> int:
-    # Get today's date
-    today_date = datetime.now().strftime('%Y-%m-%d')
-    start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
-    end_datetime = datetime.strptime(today_date, '%Y-%m-%d')
-    date_difference = (end_datetime - start_datetime).days
-
-    return date_difference
-
 def create_df(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
                               video_df: pd.DataFrame, vote_df: pd.DataFrame, date: datetime):
     user_interest_df = user_df["id"].to_frame().merge(user_interest_df, left_on="id", right_on="user_id", how="left", suffixes=["_user", "_interaction"])
@@ -136,53 +127,19 @@ def get_summary_statistics(vote_df, train_df, test_df, date, K):
     return model_statistics
 
 def run_random_forest(date, K, num_cycles):
-    user_interest_df = pd.read_feather('datasets/raw/user_interest.feather')
-    user_df = pd.read_feather('datasets/raw/user.feather')
-    season_df = pd.read_feather('datasets/raw/season.feather')
-    video_df = pd.read_feather('datasets/raw/video.feather')
-    vote_df = pd.read_feather('datasets/raw/vote.feather')
+    user_interest_df = pd.read_feather('datasets/raw_new/user_interest.feather')
+    user_df = pd.read_feather('datasets/raw_new/user.feather')
+    season_df = pd.read_feather('datasets/raw_new/season.feather')
+    video_df = pd.read_feather('datasets/raw_new/video.feather')
+    vote_df = pd.read_feather('datasets/raw_new/vote.feather')
 
     date = pd.to_datetime(date)
 
     model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
-    # for cycle in range(num_cycles):
     train_df, test_df = create_df(user_interest_df, user_df, season_df, video_df, vote_df, date)
     model_statistics_for_training_cycle = get_summary_statistics(vote_df, train_df, test_df, date, K)
     model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
-    # date = get_end_date()
 
     model_statistics['model'] = 'random_forest'
-    model_statistics.to_csv('datasets/final/random_forest_video.csv', index=False)
-# def generate_random_data(start_date, end_date):
-#     dates = pd.date_range(start_date, end_date)
-#     data = []
-
-#     for date in dates:
-#         roc_auc = random.uniform(0.49, 0.55)
-#         accuracy = random.uniform(0.987, 0.989)
-#         precision = random.uniform(0.0, 0.05)
-#         recall = random.uniform(0.0, 0.1)
-#         f1_score = random.uniform(0.0, 0.03)
-#         hit_ratio_k = random.uniform(0.0, 0.1)
-#         ndcg_k = random.uniform(0.0, 0.03)
-
-#         data.append([date.strftime('%Y-%m-%d'), roc_auc, accuracy, precision, recall, f1_score, hit_ratio_k, ndcg_k])
-
-#     return data
-
-# def run_model():
-    # start_date = datetime(2023, 7, 1)
-    # end_date = datetime.now()
-    # num_cycles = (end_date - start_date).days + 1
-
-    # data = []
-    # for _ in range(num_cycles):
-    #     data += generate_random_data(start_date, start_date)
-    #     start_date += timedelta(days=1)
-
-    # columns = ['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k']
-    # model_statistics = pd.DataFrame(data, columns=columns)
-
-    # model_statistics['model'] = 'random_forest'
-    # model_statistics.to_csv('datasets/final/random_forest_video.csv', index=False)
+    model_statistics.to_csv('datasets/final_new/random_forest_video.csv', index=False)
 

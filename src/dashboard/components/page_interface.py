@@ -19,6 +19,20 @@ def page(entity, title):
                               default=element_list)
     mapping = component_mapping()
 
+    remove_sidebar = st.checkbox("Remove Sidebar for Printing")
+
+    if remove_sidebar:
+        st.markdown(
+            """
+            <style>
+                [class="css-vk3wp9 eczjsme11"] {
+                    display: none
+                }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
     for element in elements:
         st.divider()
         if element == "User Feedback":

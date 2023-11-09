@@ -25,8 +25,7 @@ CONN_PARAMS = {
 def get_end_date() -> str:
     # Calculate end date as 2 weeks before today
     today = datetime.now()
-    end_date = (today - timedelta(weeks=2)).strftime('%Y-%m-%d')
-    return end_date
+    return today
 
 def get_num_cycles(start_date: str) -> int:
     # Get today's date
@@ -43,7 +42,7 @@ def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str
     return train_data, test_data
 
 def create_interaction_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
-                              video_df: pd.DataFrame, vote_df: pd.DataFrame, post_feed_df: pd.DataFrame, date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                              video_df: pd.DataFrame, vote_df: pd.DataFrame, date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # create the initial user interest matrix
     user_interest_train, _ = train_test_split_for_data(user_interest_df, 'updated_at', date)
     user_interest_train['count'] = 1
@@ -70,16 +69,8 @@ def create_interaction_matrices(user_interest_df: pd.DataFrame, user_df: pd.Data
     user_interest_matrix = user_interest_matrix.reindex(index=vote_categories_matrix.index, fill_value=0)
     user_interest_matrix = user_interest_matrix + vote_categories_matrix
 
-    # create weighted interaction matrix using watch_time / video_duration
-    video_interaction = post_feed_df[post_feed_df['media_type'] == 'VIDEO']
-    video_interaction['interaction'] = video_interaction['watch_time'] / video_interaction['video_duration']
-    video_interaction = video_interaction.groupby(['user_id', 'post_id'], as_index=False)['interaction'].mean()
-    video_interaction['value'] = video_interaction['interaction']  # Use 'interaction' as the interaction value
-    video_interaction_matrix = video_interaction.pivot(index='user_id', columns='post_id', values='value').fillna(0)
-    video_interaction_matrix = video_interaction_matrix.reindex(columns=user_interest_matrix.columns, fill_value=0)
-
     # Apply weights to the interaction matrix
-    weighted_interaction_matrix = 0.7 * user_interest_matrix + 0.3 * video_interaction_matrix  # Example weights: 0.7 for votes, 0.3 for watch_time interaction
+    weighted_interaction_matrix = user_interest_matrix  # Example weights: 0.7 for votes, 0.3 for watch_time interaction
 
     return weighted_interaction_matrix, video_category_matrix
 
@@ -149,18 +140,17 @@ def run_knn_recommender(date, K, num_cycles):
     season_df = pd.read_feather('datasets/raw/season.feather')
     video_df = pd.read_feather('datasets/raw/video.feather')
     vote_df = pd.read_feather('datasets/raw/vote.feather')
-    post_feed_df = pd.read_feather('datasets/raw/post_feed.feather')  
 
     model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
 
     for cycle in range(num_cycles):
-        weighted_interaction_matrix, video_category_matrix = create_interaction_matrices(user_interest_df, user_df, season_df, video_df, vote_df, post_feed_df, date)
+        weighted_interaction_matrix, video_category_matrix = create_interaction_matrices(user_interest_df, user_df, season_df, video_df, vote_df, date)
         model_statistics_for_training_cycle = get_summary_statistics(vote_df, weighted_interaction_matrix, video_category_matrix, date, K)
         model_statistics = pd.concat([model_statistics, model_statistics_for_training_cycle])
         date = get_end_date()
 
     model_statistics['model'] = 'knn'
-    model_statistics.to_csv('datasets/final/knn_video.csv', index=False)
+    model_statistics.to_csv('datasets/final_new/knn_video.csv', index=False)
 
 
 
