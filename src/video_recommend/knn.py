@@ -151,6 +151,3 @@ def run_knn_recommender(date, K, num_cycles):
 
     model_statistics['model'] = 'knn'
     model_statistics.to_csv('datasets/final_new/knn_video.csv', index=False)
-
-
-
