@@ -7,7 +7,9 @@ from src.video_recommend.random_forest import run_random_forest
 from src.video_recommend.neural_networks import run_ncf
 from src.conversation_recommend.cosine_similarity import run_collaborative_recommender
 from src.conversation_recommend.random_forest_convo import run_model_convo
+from src.dashboard.data.spark_pipeline import SparkPipeline
 import schedule
+import threading
 import time 
 import os
 
@@ -66,9 +68,36 @@ def main():
     # get dashboard metrics (commented out because i transferred this directly to the dashboard)
     # get_dashboard_data()
 
+def dashboard_video_spark_job():
+    print("Start Spark video like job %s" % threading.current_thread())
+    spark_pipeline = SparkPipeline()
+    spark_pipeline.initialize_spark_session()
+    spark_pipeline.run_video_upvote_percentage_pipeline()
+    spark_pipeline.close_spark_session()
+
+def dashboard_conversation_spark_job():
+    print("Start Spark conversation like job %s" % threading.current_thread())
+    spark_pipeline = SparkPipeline()
+    spark_pipeline.initialize_spark_session()
+    spark_pipeline.run_conversation_like_percentage_pipeline()
+    spark_pipeline.close_spark_session()
+
+def run_threaded(job):
+    job_thread = threading.Thread(target=job)
+    job_thread.start()
+
+
 if __name__ == "__main__":
     main()
     schedule.every().day.at("21:46").do(main)
+    schedule.every().day.at("00:00").do(run_threaded, dashboard_video_spark_job)
+    schedule.every().day.at("00:00").do(run_threaded, dashboard_conversation_spark_job)
+    schedule.every().day.at("06:00").do(run_threaded, dashboard_video_spark_job)
+    schedule.every().day.at("06:00").do(run_threaded, dashboard_conversation_spark_job)
+    schedule.every().day.at("12:00").do(run_threaded, dashboard_video_spark_job)
+    schedule.every().day.at("12:00").do(run_threaded, dashboard_conversation_spark_job)
+    schedule.every().day.at("18:00").do(run_threaded, dashboard_video_spark_job)
+    schedule.every().day.at("18:00").do(run_threaded, dashboard_conversation_spark_job)
 
 # while True:
     schedule.run_pending()

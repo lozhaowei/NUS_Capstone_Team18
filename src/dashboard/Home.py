@@ -1,7 +1,7 @@
 import streamlit as st
 
 from src.dashboard.data.spark_pipeline import SparkPipeline
-from user_authen.authenticate_components import setupemptyprofile, get_role, check_login_status, \
+from user_authen.authenticate_components import set_up_empty_profile, get_role, check_login_status, \
     generate_captcha, get_manager, login_with_remember_me, cookie_manager
 
 st.set_page_config(layout="wide")
@@ -10,7 +10,7 @@ st.write("Welcome to the dashboard")
 
 st.header(":violet[Login Page]")
 if "username" not in st.session_state or "role" not in st.session_state:
-    setupemptyprofile()
+    set_up_empty_profile()
 
 with st.sidebar:
     st.text("")
@@ -27,18 +27,13 @@ else:
     # print(username)
     if cookie_manager.get(cookie="username"):
         st.write(f"Do you want to login to the account: {username}?")
+
         if st.button(":green[Login]"):
             st.session_state.username = username
             st.session_state.role = get_role(username)
             st.success("Login successful!")
             st.text("Welcome! You can now navigate through the different pages")
 
-            # Run query recommended item hit ratio functions
-            spark_pipeline = SparkPipeline()
-            spark_pipeline.initialize_spark_session()
-            spark_pipeline.run_video_upvote_percentage_pipeline()
-            spark_pipeline.run_conversation_like_percentage_pipeline()
-            spark_pipeline.close_spark_session()
         if st.button(":orange[Login to another account]"):
             st.warning("Your previously remembered account will be removed from cache")
             cookie_manager.delete("username")
