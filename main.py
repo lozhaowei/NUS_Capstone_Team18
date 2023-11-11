@@ -12,7 +12,7 @@ import schedule
 import threading
 import time 
 import os
-import datetime
+from datetime import datetime
 from datetime import timedelta
 
 def main():
@@ -39,8 +39,8 @@ def main():
     print(knn_eval_video)
 
     # Step 5: Run Random Forest (Video) Model
-    random_forest_eval_video = run_random_forest(start_date_str, 10, get_num_cycles(start_date_str))
-    print(random_forest_eval_video)
+    # random_forest_eval_video = run_random_forest(start_date_str, 10, get_num_cycles(start_date_str))
+    # print(random_forest_eval_video)
 
     # Step 6: Run SVD (Video) Model
     run_svd_recommender(start_date_str, 10, get_num_cycles(start_date_str))
@@ -73,36 +73,35 @@ def main():
     # get dashboard metrics (commented out because i transferred this directly to the dashboard)
     # get_dashboard_data()
 
-def dashboard_video_spark_job():
-    print("Start Spark video like job %s" % threading.current_thread())
-    spark_pipeline = SparkPipeline()
-    spark_pipeline.initialize_spark_session()
-    spark_pipeline.run_video_upvote_percentage_pipeline()
-    spark_pipeline.close_spark_session()
+# def dashboard_video_spark_job():
+#     print("Start Spark video like job %s" % threading.current_thread())
+#     spark_pipeline = SparkPipeline()
+#     spark_pipeline.initialize_spark_session()
+#     spark_pipeline.run_video_upvote_percentage_pipeline()
+#     spark_pipeline.close_spark_session()
 
-def dashboard_conversation_spark_job():
-    print("Start Spark conversation like job %s" % threading.current_thread())
-    spark_pipeline = SparkPipeline()
-    spark_pipeline.initialize_spark_session()
-    spark_pipeline.run_conversation_like_percentage_pipeline()
-    spark_pipeline.close_spark_session()
+# def dashboard_conversation_spark_job():
+#     print("Start Spark conversation like job %s" % threading.current_thread())
+#     spark_pipeline = SparkPipeline()
+#     spark_pipeline.initialize_spark_session()
+#     spark_pipeline.run_conversation_like_percentage_pipeline()
+#     spark_pipeline.close_spark_session()
 
-def run_threaded(job):
-    job_thread = threading.Thread(target=job)
-    job_thread.start()
-
+# def run_threaded(job):
+#     job_thread = threading.Thread(target=job)
+#     job_thread.start()
 
 if __name__ == "__main__":
     main()
-    schedule.every().day.at("21:46").do(main)
-    schedule.every().day.at("00:00").do(run_threaded, dashboard_video_spark_job)
-    schedule.every().day.at("00:00").do(run_threaded, dashboard_conversation_spark_job)
-    schedule.every().day.at("06:00").do(run_threaded, dashboard_video_spark_job)
-    schedule.every().day.at("06:00").do(run_threaded, dashboard_conversation_spark_job)
-    schedule.every().day.at("12:00").do(run_threaded, dashboard_video_spark_job)
-    schedule.every().day.at("12:00").do(run_threaded, dashboard_conversation_spark_job)
-    schedule.every().day.at("18:00").do(run_threaded, dashboard_video_spark_job)
-    schedule.every().day.at("18:00").do(run_threaded, dashboard_conversation_spark_job)
+    # schedule.every().day.at("21:46").do(main)
+    # schedule.every().day.at("00:00").do(run_threaded, dashboard_video_spark_job)
+    # schedule.every().day.at("00:00").do(run_threaded, dashboard_conversation_spark_job)
+    # schedule.every().day.at("06:00").do(run_threaded, dashboard_video_spark_job)
+    # schedule.every().day.at("06:00").do(run_threaded, dashboard_conversation_spark_job)
+    # schedule.every().day.at("12:00").do(run_threaded, dashboard_video_spark_job)
+    # schedule.every().day.at("12:00").do(run_threaded, dashboard_conversation_spark_job)
+    # schedule.every().day.at("18:00").do(run_threaded, dashboard_video_spark_job)
+    # schedule.every().day.at("18:00").do(run_threaded, dashboard_conversation_spark_job)
 
 # while True:
     schedule.run_pending()
