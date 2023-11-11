@@ -6,8 +6,6 @@ from src.dashboard.data.spark_pipeline import SparkPipeline
 from user_authen.authenticate_components import set_up_empty_profile, get_role, check_login_status, \
     login_with_remember_me, cookie_manager
 
-st.set_page_config(layout="wide")
-
 st.write("Welcome to the dashboard")
 
 # Instantiate an empty session state
