@@ -207,7 +207,7 @@ def get_role(username):
     return user.iloc[0]["role"]
 
 # Initialise/Reset the session state
-def setupemptyprofile():
+def set_up_empty_profile():
     st.session_state.username = None
     st.session_state.role = None
 
