@@ -25,7 +25,7 @@ def filter_data(data, models):
     return data.copy()[mask]
 
 def get_graph_for_real_time_component(data, column):
-    line_chart_data = data[[column] + ["dt"]].set_index("dt")
+    line_chart_data = data[[column] + ["recommendation_date"]].set_index("recommendation_date")
     line_chart_data = line_chart_data.apply(pd.to_numeric)
 
     fig = px.line(line_chart_data, x=line_chart_data.index, y=column, title=f"{column} Visualisation")
