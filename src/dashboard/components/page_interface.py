@@ -1,6 +1,6 @@
 import streamlit as st
 
-from src.dashboard.data.data_handling import filter_data
+from src.dashboard.components.data_handling import filter_data
 from src.dashboard.data.database import get_dashboard_data
 from src.dashboard.components.components import component_mapping
 

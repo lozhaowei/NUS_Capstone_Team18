@@ -27,18 +27,13 @@ else:
     # print(username)
     if cookie_manager.get(cookie="username"):
         st.write(f"Do you want to login to the account: {username}?")
+
         if st.button(":green[Login]"):
             st.session_state.username = username
             st.session_state.role = get_role(username)
             st.success("Login successful!")
             st.text("Welcome! You can now navigate through the different pages")
 
-            # Run query recommended item hit ratio functions
-            spark_pipeline = SparkPipeline()
-            spark_pipeline.initialize_spark_session()
-            spark_pipeline.run_video_upvote_percentage_pipeline()
-            spark_pipeline.run_conversation_like_percentage_pipeline()
-            spark_pipeline.close_spark_session()
         if st.button(":orange[Login to another account]"):
             st.warning("Your previously remembered account will be removed from cache")
             cookie_manager.delete("username")

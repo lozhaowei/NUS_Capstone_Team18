@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_star_rating import st_star_rating
 
-from src.dashboard.data.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
+from src.dashboard.components.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
     get_graph_for_summary_metric, get_graph_for_real_time_component
 from src.dashboard.data.database import insert_model_feedback, get_model_ratings, get_upvote_percentage_for_day
 
@@ -33,7 +33,7 @@ def real_time_data_visualisation_component(entity, filtered_data, models):
     :param entity:
     :param filtered_data:
     :param models:
-    :return:
+    :return: like percentage graph
     """
     try:
         table_name = "nus_rs_video_upvote" if entity == "video" else "nus_rs_conversation_like"
@@ -41,16 +41,18 @@ def real_time_data_visualisation_component(entity, filtered_data, models):
         st.subheader("Visualisation of Recommendations Generated")
 
         col1, col2, col3 = st.columns([0.3, 0.3, 0.4])
-        start_date = col1.date_input("Start Date", value=min(data["dt"]), min_value=min(data["dt"]),
-                                     max_value=max(data["dt"]))
-        end_date = col2.date_input("End Date", value=max(data["dt"]), min_value=min(data["dt"]),
-                                   max_value=max(data["dt"]))
+        start_date = col1.date_input("Start Date", value=min(data["recommendation_date"]),
+                                     min_value=min(data["recommendation_date"]),
+                                     max_value=max(data["recommendation_date"]))
+        end_date = col2.date_input("End Date", value=max(data["recommendation_date"]),
+                                   min_value=min(data["recommendation_date"]),
+                                   max_value=max(data["recommendation_date"]))
 
-        available_metrics = [column for column in data.columns if column != "dt"]
+        available_metrics = [column for column in data.columns if column != "recommendation_date"]
         columns = col3.multiselect("Metrics", options=available_metrics,
                                    default=available_metrics[0])
 
-        data = data[(data["dt"] >= start_date) & (data["dt"] <= end_date)]
+        data = data[(data["recommendation_date"] >= start_date) & (data["recommendation_date"] <= end_date)]
         
         for column in columns:
             fig = get_graph_for_real_time_component(data, column)
