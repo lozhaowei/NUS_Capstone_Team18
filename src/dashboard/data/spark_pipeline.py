@@ -63,8 +63,8 @@ class SparkPipeline:
                             (SELECT video_id, voter_id, created_at FROM vote GROUP BY video_id, voter_id) v
                                             ON rdv.recommended_video_id = v.video_id
                                                 AND rdv.user_id = v.voter_id) t1
-                            WHERE rdv_created_at >= (CURRENT_DATE - INTERVAL 2 DAY)
---                             WHERE rdv_created_at >= ('2023-10-14' - INTERVAL 2 DAY) AND rdv_created_at <= '2023-10-14'
+--                             WHERE rdv_created_at >= (CURRENT_DATE - INTERVAL 2 DAY)
+                            WHERE rdv_created_at >= ('2023-10-06' - INTERVAL 4 DAY) AND rdv_created_at <= '2023-10-06'
                     ) t2
                     GROUP BY DATE(rdv_created_at)
                 """
@@ -84,7 +84,7 @@ class SparkPipeline:
             .mode("append") \
             .option("driver", "com.mysql.cj.jdbc.Driver") \
             .option("url", self.url) \
-            .option("dbtable", "nus_rs_video_upvote_new") \
+            .option("dbtable", "nus_rs_video_upvote") \
             .option("user", config('DB_USER')) \
             .option("password", config('DB_PASSWORD')) \
             .save()
@@ -121,8 +121,8 @@ class SparkPipeline:
                             FROM conversation_like) c
                                             ON rdc.recommended_conversation_id = c.conversation_id
                                                 AND rdc.user_id = c.like_giver_id) t1
-                            WHERE rdc_created_at >= (CURRENT_DATE - INTERVAL 2 DAY)
---                             WHERE rdc_created_at >= ('2023-10-11' - INTERVAL 4 DAY) AND rdc_created_at <= '2023-10-11'
+--                             WHERE rdc_created_at >= (CURRENT_DATE - INTERVAL 2 DAY)
+                            WHERE rdc_created_at >= ('2023-10-07' - INTERVAL 4 DAY) AND rdc_created_at <= '2023-10-07'
                     ) t2
                     GROUP BY DATE(rdc_created_at)
                 """
@@ -142,7 +142,7 @@ class SparkPipeline:
             .mode("append") \
             .option("driver", "com.mysql.cj.jdbc.Driver") \
             .option("url", self.url) \
-            .option("dbtable", "nus_rs_conversation_like_new") \
+            .option("dbtable", "nus_rs_conversation_like") \
             .option("user", config('DB_USER')) \
             .option("password", config('DB_PASSWORD')) \
             .save()
