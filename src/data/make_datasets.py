@@ -10,7 +10,6 @@ def write_feather_data(table, df, data_dir):
 
     print(f"Table '{table}' saved as '{feather_file_path}'")
 
-
 def pull_raw_data(list_of_tables):
     try:
         for table in list_of_tables:
@@ -29,13 +28,54 @@ def pull_raw_data(list_of_tables):
 def pull_raw_video_data(list_of_tables):
     try:
         for table in list_of_tables:
-            query = f"SELECT * FROM {table} LIMIT 10000"
+            query = f"SELECT * FROM {table}"
             df = database.query_database(query)
 
             base_dir = os.path.dirname(os.path.abspath(__file__))
             data_dir = os.path.join(base_dir, '../..', 'datasets', 'raw_new')
 
             write_feather_data(table, df, data_dir)
+
+    except Exception as e:
+        print("Error:", e)
+
+
+def pull_latest_data_and_combine(list_of_tables, existing_data_dir, latest_data_dir):
+    try:
+        for table in list_of_tables:
+            # Define the appropriate datetime column for each table
+            datetime_column = {
+                'user_interest': 'updated_at',
+                'season': 'created_at',
+                'video': 'created_at',
+                'user': 'updated_at',
+                'vote': 'created_at'
+            }.get(table)
+
+            if not datetime_column:
+                print(f"Error: Datetime column not defined for table {table}")
+                continue
+
+            # Fetch the latest date from the existing data
+            existing_data_path = os.path.join(existing_data_dir, f'{table}.feather')
+            existing_df = pd.read_feather(existing_data_path)
+
+            latest_date = existing_df[datetime_column].max()
+
+            # Fetch only the latest data from the database
+            query = f"SELECT * FROM {table} WHERE {datetime_column} = '{latest_date}'"
+            latest_data_df = database.query_database(query)
+
+            # Save the latest data to the "datasets/latest" directory
+            latest_data_dir_path = os.path.join(latest_data_dir, f'{table}.feather')
+            write_feather_data(table, latest_data_df, latest_data_dir)
+
+            # Combine the existing data with the latest data
+            combined_df = pd.concat([existing_df, latest_data_df], ignore_index=True)
+
+            # Save the combined data back to the "datasets/raw_new" directory
+            combined_data_dir_path = os.path.join(existing_data_dir, f'{table}.feather')
+            write_feather_data(table, combined_df, existing_data_dir)
 
     except Exception as e:
         print("Error:", e)

@@ -1,6 +1,6 @@
 import streamlit as st
 
-from user_authen.authenticate_components import check_login_status
+from src.dashboard.user_authen.authenticate_components import check_login_status
 from src.dashboard.components.page_interface import page
 
 st.set_page_config(layout="wide")
@@ -15,5 +15,3 @@ else:
         st.write("You do not have access. Please contact the administrator.")
     else:
         st.write("Please login!")
-
-

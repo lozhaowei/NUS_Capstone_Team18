@@ -214,13 +214,19 @@ def setupemptyprofile():
 # Function to check the login status of the user, if the user is logged in, there will be a "Logout" button at the side bar,
 # if the user has not logged in, there will be a "Log In" button at the side bar, clicking on this button directs the user to Home page to log in.
 def check_login_status():
-    if st.session_state.username is not None:
+    if 'username' not in st.session_state:
+        set_up_empty_profile()
+    elif st.session_state.username is not None:
         if st.sidebar.button("Log Out"):
-            setupemptyprofile()
+            set_up_empty_profile()
             st.success("Logged out successfully!")
     else:
         if st.sidebar.button("Log In"):
             switch_page("Home")
+
+def set_up_empty_profile():
+    st.session_state.username = None
+    st.session_state.role = None
 
 # This function performs strong password validation such that it must include an upper case letter, a lower case letter
 # a number and a special character
@@ -437,12 +443,5 @@ def login_with_remember_me():
             st.session_state.role = get_role(username)
             st.success("Login successful!")
             st.text("Welcome! You can now navigate through the different pages")
-
-            # Run query recommended item hit ratio functions
-            spark_pipeline = SparkPipeline()
-            spark_pipeline.initialize_spark_session()
-            spark_pipeline.run_video_upvote_percentage_pipeline()
-            spark_pipeline.run_conversation_like_percentage_pipeline()
-            spark_pipeline.close_spark_session()
         else:
             st.error("Login failed. Please check your credentials.")
