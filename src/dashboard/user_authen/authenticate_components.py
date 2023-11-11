@@ -6,6 +6,7 @@ import re
 import random
 import pymysql
 import datetime
+import base64
 
 import extra_streamlit_components as stx
 from streamlit_extras.switch_page_button import switch_page
@@ -14,9 +15,14 @@ from src.data.make_datasets import pull_raw_data
 from src.dashboard.data.spark_pipeline import SparkPipeline
 from decouple import config
 
-# Define the path for the CSV file
-csv_file_path = "datasets/final/user_data.csv"
+# This pages comprises of the various components of user authentication that will be used for our user login and management process
 
+# Define the path for the CSV file that stores user data
+csv_file_path = "datasets/final/user_data.csv"
+user_data_table = "nus_user_data"
+user_roles = ["admin", "user_for_both", "user_for_conversation", "user_for_videos", "user"]
+
+# Extracting the parameters for connecting to the SQL tables
 CONN_PARAMS = {
     'host': config('DB_HOST'),
     'user': config('DB_USER'),
@@ -25,6 +31,45 @@ CONN_PARAMS = {
     'database': config('DB_NAME'),
 }
 
+def check_table_exist(table_name):
+    """
+    Checks if a table exists in the database, and creates the table if it doesn't.
+
+    Parameters:
+    - table_name (str): The name of the table to check.
+
+    Returns:
+    - bool: True if the table exists, False if it doesn't.
+    """
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        # Query to see if the table exist in the database
+        table_exists_query = f"SHOW TABLES LIKE '{table_name}'"
+        table_exists = cursor.execute(table_exists_query)
+        # If the table does not exist, we create the table in the AWS server
+        
+        if not table_exists:
+            print("table does not exist in AWS, creating new table")
+            columns = {
+                'username': 'VARCHAR(45)',
+                'email': 'VARCHAR(45)',
+                'password': 'VARCHAR(255)',
+                'role': 'VARCHAR(45)'
+            }
+            create_table_query = f"CREATE TABLE {table_name} ({', '.join([f'{col} {datatype}' for col, datatype in columns.items()])}, PRIMARY KEY (username))"
+            cursor.execute(create_table_query)
+            conn.close()
+            return False
+        else:
+            conn.close()
+            return True
+
+    except Exception as e:
+        print("Error:", e)
+
+# This function inserts the local user data credential table to the AWS server
 def insert_user_data(table_name, data):
     try:
         conn = pymysql.connect(**CONN_PARAMS)
@@ -35,18 +80,52 @@ def insert_user_data(table_name, data):
         # Convert NaN values to None for proper insertion
         data = data.where(pd.notna(data), None)
 
-        # Insert data only if the combination of 'dt' and 'model' is unique
+        # Insert data only if the combination of 'username' and 'email' is unique
         for _, row in data.iterrows():
             insert_query = f'''
             INSERT INTO {table_name} (`username`, `email`, `password`, `role`) 
             SELECT %s, %s, %s, %s
             WHERE NOT EXISTS (
-                SELECT 1 FROM {table_name} WHERE `username` = %s AND `email` = %s
+                SELECT 1 FROM {table_name} WHERE `username` = %s
             )
             '''
-            cursor.execute(insert_query, (row['username'], row['email'], row['password'], row['role'], row['username'], row['email']))
+            cursor.execute(insert_query, (row['username'], row['email'], row['password'], row['role'], row['username']))
+        
+        conn.commit()
+        conn.close()
+
+        print(f"Data inserted in MySQL table '{table_name}' successfully.")
+
+    except Exception as e:
+        print("Error:", e)
+
+def update_table(table_name, data):
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        for _, row in data.iterrows():
+            username = row['username']
+            email = row['email']
+            password = row['password']
+            role = row['role']
+
+            query = f"SELECT COUNT(*) FROM {table_name} WHERE username = '{username}'"
+            cursor.execute(query)
+            record_exists = cursor.fetchone()[0]
+            
+            print("checking records")
+            if record_exists:
+                # Update the existing record
+                update_query = f"UPDATE {table_name} SET email = '{email}', password = '{password}', role = '{role}' WHERE username = '{username}'"
+                cursor.execute(update_query)
+            else:
+                # Insert a new record
+                insert_query = f"INSERT INTO {table_name} (username, email, password, role) VALUES ('{username}', '{email}', '{password}', '{role}')"
+                cursor.execute(insert_query)
 
         conn.commit()
+        cursor.close()
         conn.close()
 
         print(f"Data updated in MySQL table '{table_name}' successfully.")
@@ -54,27 +133,29 @@ def insert_user_data(table_name, data):
     except Exception as e:
         print("Error:", e)
 
-
-# Create an empty DataFrame to store user details or load from CSV if it exists
-#pull_raw_data(['nus_user_data'])
-# If the table is not extracted/does not exist, use the local one instead, if local one also dont have, create a new table
 #if the table exists on AWS server, then a feather file will be created in datasets/raw
-if os.path.exists('datasets/raw/nus_user_data.feather'):
-    #read the data
+if check_table_exist(user_data_table): 
+    print("getting data from AWS")
+    pull_raw_data([user_data_table])
     user_data = pd.read_feather('datasets/raw/nus_user_data.feather')
-    if os.path.exists(csv_file_path):
-        user_data = pd.read_csv(csv_file_path)
-#if table does not exist on AWS server, we will check if it exists on the final file(which is a local saved copy)
-elif os.path.exists(csv_file_path):
-    print("retrieving local user_data file")
+    user_data.to_csv(csv_file_path, index=False)
     user_data = pd.read_csv(csv_file_path)
-#if there isnt a file on both directory, then create a new empty table to store user data
+    print(user_data)
 else:
-    print("new df")
-    user_data = pd.DataFrame(columns=["username", "email", "password", "role"])
+    #if table does not exist on AWS server, we will check if it exists on the final file(which is a locally saved copy)
+    if os.path.exists(csv_file_path):
+        print("retrieving local user_data file")
+        user_data = pd.read_csv(csv_file_path)
+    else:
+        print("new df")
+        #if there isnt a file on both directory, then create a new empty table to store user data
+        user_data = pd.DataFrame(columns=["username", "email", "password", "role"])
+#if there is already a local user data table, then we will insert/update the AWS table
 
-print("inserting data")
-insert_user_data("nus_user_data", user_data)     
+#insert_user_data("nus_user_data", user_data)     
+
+def get_user_data():
+    return pd.read_csv(csv_file_path)
 
 # Function to hash passwords
 def hash_password(password):
@@ -82,6 +163,7 @@ def hash_password(password):
 
 # Function to add a user to the DataFrame and save to CSV
 def add_user(username, email, password, role):
+    user_data = pd.read_csv(csv_file_path)
     hashed_password = hash_password(password)
     user_data.loc[len(user_data)+1] = [username, email, hashed_password, role]
     user_data.to_csv(csv_file_path, index=False)  # Save to CSV
@@ -95,18 +177,21 @@ def authenticate(username, password):
         return False
     return user.iloc[0]["password"] == hash_password(password)
 
+# Function to validate that email follow the correct pattern
 def validate_email(email):
     pattern = "^[a-zA-Z0-9-_]+@[a-zA-Z0-9]+\.[a-z]{1,3}$" #tesQQ12@gmail.com
     if re.match(pattern, email):
         return True
     return False
 
+# Ensure that the username field is valid
 def validate_username(username):
     pattern = "^[a-zA-Z0-9]*$"
     if re.match(pattern, username):
         return True
     return False
 
+# Function to authenticate the user account based on matching credentials in the user_data_table
 def authenticate(username, password):
     user = user_data[user_data["username"] == username]
     if user.empty:
@@ -116,14 +201,18 @@ def authenticate(username, password):
         return True
     return None
 
+# Function to obtain the role of the user
 def get_role(username):
     user = user_data[user_data["username"] == username]
     return user.iloc[0]["role"]
 
-def get_password(username):
-    user = user_data[user_data["username"] == username]
-    return user.iloc[0]["password"]
+# Initialise/Reset the session state
+def set_up_empty_profile():
+    st.session_state.username = None
+    st.session_state.role = None
 
+# Function to check the login status of the user, if the user is logged in, there will be a "Logout" button at the side bar,
+# if the user has not logged in, there will be a "Log In" button at the side bar, clicking on this button directs the user to Home page to log in.
 def check_login_status():
     if 'username' not in st.session_state:
         set_up_empty_profile()
@@ -139,6 +228,8 @@ def set_up_empty_profile():
     st.session_state.username = None
     st.session_state.role = None
 
+# This function performs strong password validation such that it must include an upper case letter, a lower case letter
+# a number and a special character
 def is_strong_password(password):
     # Minimum length check
     if len(password) < 8:
@@ -151,8 +242,15 @@ def is_strong_password(password):
         return False
     return True
 
+# This function allows the different credential of users to be updated
 def user_update():
+    user_data = pd.read_csv(csv_file_path)
+    # The selectbox allows the admins to select different operations
+    # All the changes will be reflected in the user data table in AWS Server
     action = st.selectbox("Select an action: ", ["Delete User", "Update User Email", "Update User Password", "Update User Role"])
+    # When deleting user, the admin will search for a user by typing the username in the search bar
+    # Then the admin can choose a user from the select box generated from the search result
+    # The admin can then click on the button to delete the user
     if action == "Delete User":
         st.subheader("Delete User")
         search_string = st.text_input("Search user to delete", "")
@@ -163,10 +261,17 @@ def user_update():
             if user_to_delete:
                 user_data.drop(user_data[user_data['username'] == user_to_delete].index, inplace=True)
                 user_data.to_csv(csv_file_path, index=False)
-                insert_user_data("nus_user_data", user_data)
+                #user_data = pd.read_csv(csv_file_path)
+                #print(user_data)
+                update_table("nus_user_data", user_data)
                 st.success(f"User '{user_to_delete}' has been deleted.")
             else:
                 st.error("Please select a user to delete.")
+
+    # When updating user email, the admin will search for a user by typing the username in the search bar
+    # Then the admin can choose a user from the select box generated from the search result
+    # The admin can then enter a new email for the user and click on the button to update the email
+    # There is also a check in place to validate the email
     elif action == "Update User Email":
         st.subheader("Update User Details")
         search_string = st.text_input("Search user to update", "")
@@ -178,11 +283,17 @@ def user_update():
         if st.button("Update"):
             if validate_email(new_email):
                 user_data.loc[user_index, "email"] = new_email
+                user_data.to_csv(csv_file_path, index=False)
+                #user_data = pd.read_csv(csv_file_path)
+                update_table("nus_user_data", user_data)
                 st.success("Email successfully changed")
             else:
                 st.write("Invalid Email")
-        user_data.to_csv(csv_file_path, index=False)
-        insert_user_data("nus_user_data", user_data)
+        
+    # When updating user password, the admin will search for a user by typing the username in the search bar
+    # Then the admin can choose a user from the select box generated from the search result
+    # The admin can then enter a new password and confirm the password for the user and click on the button to update the password
+    # There is also a check in place to validate whether the password is a strong password
     elif action == "Update User Password":
         st.subheader("Change Password")
         search_string = st.text_input("Search user to update", "")
@@ -196,11 +307,17 @@ def user_update():
         if st.button("Update"):
             if is_strong_password(new_password2) and new_password == new_password2 and authenticate(user_to_update, old_password):
                 user_data.loc[user_index, "password"] = hash_password(new_password2)
+                user_data.to_csv(csv_file_path, index=False)
+                #user_data = pd.read_csv(csv_file_path)
+                update_table("nus_user_data", user_data)
                 st.success("Password successfully changed")
             else:
                 st.write("Please check the password fields are correct!")
-        user_data.to_csv(csv_file_path, index=False)
-        insert_user_data("nus_user_data", user_data)
+
+
+    # When updating user role, the admin will search for a user by typing the username in the search bar
+    # Then the admin can choose a user from the select box generated from the search result
+    # The admin can then select a new role and click on the button to update the roled
     elif action == "Update User Role":
         st.subheader("Update User Role")
         search_string = st.text_input("Search user to update", "")
@@ -208,13 +325,16 @@ def user_update():
         filtered_users = [user for user in user_list if search_string in user]
         user_to_update = st.selectbox("Select the user to update:", sorted(filtered_users))
         user_index = user_data[user_data['username'] == user_to_update].index
-        new_role = st.selectbox("Role", ["admin", "user", "guest user"])
+        new_role = st.selectbox("Role", user_roles)
         if st.button("Update"):
             user_data.loc[user_index, "role"] = new_role
+            
+            user_data.to_csv(csv_file_path, index=False)
+            #user_data = pd.read_csv(csv_file_path)
+            update_table("nus_user_data", user_data)
             st.success("User role successfully changed")
-        user_data.to_csv(csv_file_path, index=False)
-        insert_user_data("nus_user_data", user_data)
 
+# This function allows users to change their own password (it is meant for the non-admin users)
 def change_password():
     st.subheader("Change Password")
     user_to_update = st.session_state.username
@@ -229,8 +349,11 @@ def change_password():
         else:
             st.write("Please check the password fields are correct!")
     user_data.to_csv(csv_file_path, index=False)
-    insert_user_data("nus_user_data", user_data)
-    
+    #user_data = pd.read_csv(csv_file_path)
+    update_table("nus_user_data", user_data)
+
+# This function creates the sign up form for the admin to create account for new users
+# The various vailidation for username, email and password will still hold.
 def sign_up():
     with st.form(key = "Create User", clear_on_submit=True):
         st.subheader(":green[Create User]")
@@ -238,7 +361,7 @@ def sign_up():
         email = st.text_input(":blue[Email]")
         password = st.text_input(":blue[Password]", type="password")
         password2 = st.text_input(":blue[Confirm Password]", type="password")
-        role = st.selectbox(":blue[Role]", ["admin", "user", "guest user"])
+        role = st.selectbox(":blue[Role]", user_roles)
         btn1, btn2, btn3, btn4, btn5 = st.columns(5)
         with btn3:
             st.form_submit_button('Create')
@@ -269,18 +392,6 @@ def sign_up():
             else:
                 st.warning('Invalid Email')
 
-def generate_captcha():
-    chrs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
-    txt = ""
-    n = 4
-    while (n):
-        txt += chrs[random.randint(1, 1000) % 35]
-        n -= 1
-    captcha = ImageCaptcha()
-    image = captcha.generate(txt)
-    return txt, image
-
-import base64
 
 # Pseudo-code for generating a session token
 def generate_session_token(username, role):

@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 
 check_login_status()
 
-if st.session_state.role == "admin":
+if st.session_state.role == "admin" or st.session_state.role == "user_for_conversation" or st.session_state.role == "user_for_both":
     page('convo', 'Conversations')
 
 else:
