@@ -29,7 +29,7 @@ def pull_raw_data(list_of_tables):
 def pull_raw_video_data(list_of_tables):
     try:
         for table in list_of_tables:
-            query = f"SELECT * FROM {table} LIMIT 10000"
+            query = f"SELECT * FROM {table}"
             df = database.query_database(query)
 
             base_dir = os.path.dirname(os.path.abspath(__file__))

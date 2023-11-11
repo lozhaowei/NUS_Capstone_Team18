@@ -2,6 +2,8 @@ import pymysql
 import pandas as pd
 from decouple import config
 import os 
+import csv
+from datetime import datetime
 
 CONN_PARAMS = {
     'host': config('DB_HOST'),
@@ -118,4 +120,22 @@ def combine_tables_convo():
     print(f"Combined data saved to '{output_path}' successfully.")
     return output_path
 
+def is_valid_datetime(date_str):
+    try:
+        datetime.strptime(date_str, '%Y-%m-%d')
+        return True
+    except ValueError:
+        return False
 
+def clean_csv(input_csv_path, output_csv_path):
+    with open(input_csv_path, 'r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        rows = list(csv_reader)
+
+    cleaned_rows = [row for row in rows if is_valid_datetime(row.get('dt'))]
+
+    with open(output_csv_path, 'w', newline='') as cleaned_csv:
+        fieldnames = csv_reader.fieldnames
+        csv_writer = csv.DictWriter(cleaned_csv, fieldnames=fieldnames)
+        csv_writer.writeheader()
+        csv_writer.writerows(cleaned_rows)
