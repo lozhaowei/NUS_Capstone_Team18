@@ -54,7 +54,7 @@ def get_upvote_percentage_for_day(table_name, interacted_entity, interacted_pct)
                            OVER (PARTITION BY recommendation_date ORDER BY dt DESC) AS rn
             FROM {table_name}
         )
-        SELECT {interacted_entity}, number_recommended, {interacted_pct}, recommendation_date 
+        SELECT {interacted_pct}, {interacted_entity}, number_recommended, recommendation_date, dt  
         FROM ranked_like_ratio WHERE rn = 1;
         """
 

@@ -71,18 +71,28 @@ def real_time_data_visualisation_component(entity, filtered_data, models):
 
             spark_pipeline.close_spark_session()
 
-        for column in columns:
-            fig = get_graph_for_real_time_component(data, column)
-            st.plotly_chart(fig, use_container_width=True)
+        tab1, tab2 = st.tabs(["Visualisation", "Data"])
 
-            col1, col2 = st.columns(2)
+        with tab1:
+            for column in columns:
+                fig = get_graph_for_real_time_component(data, column)
+                st.plotly_chart(fig, use_container_width=True)
 
-            three_day_avg = data.tail(3)[column].mean()
-            formatted_three_day_avg = f"{three_day_avg:,.2f}" if "percentage" not in column else f"{three_day_avg:.2%}"
-            one_week_avg = data.tail(7)[column].mean()
-            formatted_one_week_avg = f"{one_week_avg:,.2f}" if "percentage" not in column else f"{one_week_avg:.2%}"
-            col1.metric("3D Average", formatted_three_day_avg)
-            col2.metric("1W Average", formatted_one_week_avg)
+                col1, col2, col3 = st.columns(3)
+
+                three_day_avg = data.tail(3)[column].mean()
+                formatted_three_day_avg = f"{three_day_avg:,.2f}" if "percentage" not in column else f"{three_day_avg:.2%}"
+                one_week_avg = data.tail(7)[column].mean()
+                formatted_one_week_avg = f"{one_week_avg:,.2f}" if "percentage" not in column else f"{one_week_avg:.2%}"
+                one_month_avg = data.tail(31)[column].mean()
+                formatted_one_month_avg = f"{one_month_avg:,.2f}" if "percentage" not in column else f"{one_month_avg:.2%}"
+
+                col1.metric("3D Average", formatted_three_day_avg)
+                col2.metric("1W Average", formatted_one_week_avg)
+                col3.metric("1M Average", formatted_one_month_avg)
+
+        with tab2:
+            st.dataframe(data)
         
         return fig
 
@@ -110,7 +120,7 @@ def historical_retraining_data_visualisation_component(entity, filtered_data, mo
             st.plotly_chart(fig, use_container_width=True)
 
         with tab2:
-            st.write(filtered_data)
+            st.dataframe(filtered_data)
 
         return fig
 
