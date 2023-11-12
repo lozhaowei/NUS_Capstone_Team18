@@ -33,12 +33,14 @@ def get_dashboard_data(entity):
     except Exception as e:
         print("Error:", e)
 
-def get_upvote_percentage_for_day(table_name):
+def get_upvote_percentage_for_day(table_name, interacted_entity, interacted_pct):
     """
     Queries the upvoted entity summary table (nus_rs_video_upvote, nus_rs_conversation_like)
     Chooses the most recent updated entry for each recommendation date
 
     :param table_name: upvoted entity summary table
+    :param interacted_entity: column representing the interacted entity in the table (upvoted_videos / liked_conversations)
+    :param interacted_pct: column representing the liked entity in the table (upvote_percentage / like_percentage)
     :return: upvoted entity summary table
     """
     try:
@@ -52,7 +54,7 @@ def get_upvote_percentage_for_day(table_name):
                            OVER (PARTITION BY recommendation_date ORDER BY dt DESC) AS rn
             FROM {table_name}
         )
-        SELECT upvoted_videos, number_recommended, upvote_percentage, recommendation_date 
+        SELECT {interacted_entity}, number_recommended, {interacted_pct}, recommendation_date 
         FROM ranked_like_ratio WHERE rn = 1;
         """
 

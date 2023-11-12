@@ -92,10 +92,10 @@ def combine_tables_video():
     table1 = pd.read_csv('datasets/final_new/random_forest_video.csv')
     table2 = pd.read_csv('datasets/final_new/knn_video.csv')
     table3 = pd.read_csv('datasets/final_new/svd_video.csv')
-    # table4 = pd.read_csv('datasets/final_new/ncf_video.csv')
+    table4 = pd.read_csv('datasets/final_new/ncf_video.csv')
 
     # Combine tables
-    combined_table = pd.concat([table1, table2, table3], ignore_index=True)
+    combined_table = pd.concat([table1, table2, table3, table4], ignore_index=True)
 
     output_folder = 'datasets/final_new'
     os.makedirs(output_folder, exist_ok=True)
