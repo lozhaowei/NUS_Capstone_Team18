@@ -17,10 +17,11 @@ class SparkPipeline:
         sys.path.append("C:/hadoop-3.3.6/bin")
 
     def initialize_spark_session(self):
+        print('Starting spark session')
+
+        # Spark Config
         conf = SparkConf().setAll([("spark.dynamicAllocation.enabled", "true"), ("spark.executor.cores", 5),
                                    ("spark.executor.instances", 3),
-                                   # ("spark.dynamicAllocation.minExecutors", "1"),
-                                   # ("spark.dynamicAllocation.maxExecutors", "5"),
                                    ("spark.sql.shuffle.partitions", 500),
                                    ("spark.sql.inMemoryColumnarStorage.compressed", "true"),
                                    ("spark.sql.adaptive.skewJoin.enabled", "true")])
@@ -64,7 +65,7 @@ class SparkPipeline:
                                             ON rdv.recommended_video_id = v.video_id
                                                 AND rdv.user_id = v.voter_id) t1
                             WHERE rdv_created_at >= (CURRENT_DATE - INTERVAL 2 DAY)
---                             WHERE rdv_created_at >= ('2023-10-11' - INTERVAL 5 DAY) AND rdv_created_at <= '2023-10-11'
+--                             WHERE rdv_created_at >= ('2023-09-26' - INTERVAL 2 DAY) AND rdv_created_at <= '2023-09-26'
                     ) t2
                     GROUP BY DATE(rdv_created_at)
                 """
@@ -122,7 +123,6 @@ class SparkPipeline:
                                             ON rdc.recommended_conversation_id = c.conversation_id
                                                 AND rdc.user_id = c.like_giver_id) t1
                             WHERE rdc_created_at >= (CURRENT_DATE - INTERVAL 2 DAY)
---                             WHERE rdc_created_at >= ('2023-10-07' - INTERVAL 5 DAY) AND rdc_created_at <= '2023-10-07'
                     ) t2
                     GROUP BY DATE(rdc_created_at)
                 """
@@ -151,6 +151,7 @@ class SparkPipeline:
         print(f"Time taken: {t1 - t0:.2f} seconds")
 
     def close_spark_session(self):
+        print('Closing spark session')
         self.spark.stop()
 
     # Query code but written with spark dataframe functions

@@ -4,6 +4,7 @@ from streamlit_star_rating import st_star_rating
 from src.dashboard.components.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
     get_graph_for_summary_metric, get_graph_for_real_time_component
 from src.dashboard.data.database import insert_model_feedback, get_model_ratings, get_upvote_percentage_for_day
+from src.dashboard.data.spark_pipeline import SparkPipeline
 
 
 def summary_metrics_component(entity, filtered_data, models):
@@ -53,7 +54,21 @@ def real_time_data_visualisation_component(entity, filtered_data, models):
                                    default=available_metrics[0])
 
         data = data[(data["recommendation_date"] >= start_date) & (data["recommendation_date"] <= end_date)]
-        
+
+        refresh_button = st.button('Update latest 3 days of data')
+        st.caption('This can take up to 10 minutes depending on data volume')
+
+        if refresh_button:
+            spark_pipeline = SparkPipeline()
+            spark_pipeline.initialize_spark_session()
+
+            if entity == 'video':
+                spark_pipeline.run_video_upvote_percentage_pipeline()
+            if entity == 'convo':
+                spark_pipeline.run_conversation_like_percentage_pipeline()
+
+            spark_pipeline.close_spark_session()
+
         for column in columns:
             fig = get_graph_for_real_time_component(data, column)
             st.plotly_chart(fig, use_container_width=True)
