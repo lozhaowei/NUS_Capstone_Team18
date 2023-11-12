@@ -30,14 +30,16 @@ def summary_metrics_component(entity, filtered_data, models):
 def real_time_data_visualisation_component(entity, filtered_data, models):
     """
     Visualise total like percentage of each entity
-    :param entity:
-    :param filtered_data:
-    :param models:
+    :param entity: entity being recommended (video / convo)
+    :param filtered_data: placeholder for function_mapping
+    :param models: placeholder for function_mapping
     :return: like percentage graph
     """
     try:
         table_name = "nus_rs_video_upvote" if entity == "video" else "nus_rs_conversation_like"
-        data = get_upvote_percentage_for_day(table_name)
+        interacted_entity = "upvoted_videos" if entity == "video" else "liked_conversations"
+        interacted_pct = "upvote_percentage" if entity == "video" else "like_percentage"
+        data = get_upvote_percentage_for_day(table_name, interacted_entity, interacted_pct)
         st.subheader("Visualisation of Recommendations Generated")
 
         col1, col2, col3 = st.columns([0.3, 0.3, 0.4])
@@ -57,6 +59,15 @@ def real_time_data_visualisation_component(entity, filtered_data, models):
         for column in columns:
             fig = get_graph_for_real_time_component(data, column)
             st.plotly_chart(fig, use_container_width=True)
+
+            col1, col2 = st.columns(2)
+
+            three_day_avg = data.tail(3)[column].mean()
+            formatted_three_day_avg = f"{three_day_avg:,.2f}" if "percentage" not in column else f"{three_day_avg:.2%}"
+            one_week_avg = data.tail(7)[column].mean()
+            formatted_one_week_avg = f"{one_week_avg:,.2f}" if "percentage" not in column else f"{one_week_avg:.2%}"
+            col1.metric("3D Average", formatted_three_day_avg)
+            col2.metric("1W Average", formatted_one_week_avg)
         
         return fig
 
