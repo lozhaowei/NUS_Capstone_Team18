@@ -16,6 +16,9 @@ from datetime import datetime
 from datetime import timedelta
 
 def main():    
+
+    ######### RUN STEP 1 AND 2 ONLY ONCE. THEN COMMENT IT OUT AND DO NOT RUN AGAIN ON A DAILY BASIS #########
+       
     # Step 1: pull data from database - keep it commented out
     # pull_raw_data(['contest', 'conversation', 'conversation_feed', 'conversation_like',
     #                 'conversation_reply', 'follow', 'post', 'post_feed', 'post_like', 'season',
