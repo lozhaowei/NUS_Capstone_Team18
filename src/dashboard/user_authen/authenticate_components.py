@@ -3,16 +3,14 @@ import streamlit as st
 import hashlib
 import os
 import re
-import random
 import pymysql
 import datetime
 import base64
+import uuid
 
 import extra_streamlit_components as stx
 from streamlit_extras.switch_page_button import switch_page
-from captcha.image import ImageCaptcha
 from src.data.make_datasets import pull_raw_data
-from src.dashboard.data.spark_pipeline import SparkPipeline
 from decouple import config
 
 # This pages comprises of the various components of user authentication that will be used for our user login and management process
@@ -56,9 +54,10 @@ def check_table_exist(table_name):
                 'username': 'VARCHAR(45)',
                 'email': 'VARCHAR(45)',
                 'password': 'VARCHAR(255)',
-                'role': 'VARCHAR(45)'
+                'role': 'VARCHAR(45)',
+                'user_id': 'VARCHAR(255)'
             }
-            create_table_query = f"CREATE TABLE {table_name} ({', '.join([f'{col} {datatype}' for col, datatype in columns.items()])}, PRIMARY KEY (username))"
+            create_table_query = f"CREATE TABLE {table_name} ({', '.join([f'{col} {datatype}' for col, datatype in columns.items()])}, PRIMARY KEY (user_id))"
             cursor.execute(create_table_query)
             conn.close()
             return False
@@ -80,16 +79,16 @@ def insert_user_data(table_name, data):
         # Convert NaN values to None for proper insertion
         data = data.where(pd.notna(data), None)
 
-        # Insert data only if the combination of 'username' and 'email' is unique
+        # Insert data only if the 'userid and is unique
         for _, row in data.iterrows():
             insert_query = f'''
-            INSERT INTO {table_name} (`username`, `email`, `password`, `role`) 
-            SELECT %s, %s, %s, %s
+            INSERT INTO {table_name} (`username`, `email`, `password`, `role`, `user_id`) 
+            SELECT %s, %s, %s, %s, %s
             WHERE NOT EXISTS (
-                SELECT 1 FROM {table_name} WHERE `username` = %s
+                SELECT 1 FROM {table_name} WHERE `user_id` = %s AND `username` = %s
             )
             '''
-            cursor.execute(insert_query, (row['username'], row['email'], row['password'], row['role'], row['username']))
+            cursor.execute(insert_query, (row['username'], row['email'], row['password'], row['role'], row['user_id'], row['username']))
         
         conn.commit()
         conn.close()
@@ -98,6 +97,9 @@ def insert_user_data(table_name, data):
 
     except Exception as e:
         print("Error:", e)
+
+#user_data = pd.read_csv(csv_file_path)
+#insert_user_data("nus_user_data", user_data)
 
 def update_table(table_name, data):
     try:
@@ -109,19 +111,22 @@ def update_table(table_name, data):
             email = row['email']
             password = row['password']
             role = row['role']
+            user_id = row['user_id']
 
             query = f"SELECT COUNT(*) FROM {table_name} WHERE username = '{username}'"
             cursor.execute(query)
             record_exists = cursor.fetchone()[0]
             
-            print("checking records")
+            print("Checking record")
+
             if record_exists:
                 # Update the existing record
                 update_query = f"UPDATE {table_name} SET email = '{email}', password = '{password}', role = '{role}' WHERE username = '{username}'"
                 cursor.execute(update_query)
             else:
                 # Insert a new record
-                insert_query = f"INSERT INTO {table_name} (username, email, password, role) VALUES ('{username}', '{email}', '{password}', '{role}')"
+                print("Add new record")
+                insert_query = f"INSERT INTO {table_name} (username, email, password, role, user_id) VALUES ('{username}', '{email}', '{password}', '{role}', '{user_id}')"
                 cursor.execute(insert_query)
 
         conn.commit()
@@ -133,6 +138,25 @@ def update_table(table_name, data):
     except Exception as e:
         print("Error:", e)
 
+def delete_user_from_cloud(table_name, user_name):
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+    
+        # Construct the SQL query to delete the specific user
+        delete_query = f"DELETE FROM {table_name} WHERE username = '{user_name}'"
+        cursor.execute(delete_query)
+
+        # Commit the deletion and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        print(f"User deleted in MySQL table '{table_name}' successfully.")
+
+    except Exception as e:
+        print("Error:", e)
+
 #if the table exists on AWS server, then a feather file will be created in datasets/raw
 if check_table_exist(user_data_table): 
     print("getting data from AWS")
@@ -140,7 +164,7 @@ if check_table_exist(user_data_table):
     user_data = pd.read_feather('datasets/raw/nus_user_data.feather')
     user_data.to_csv(csv_file_path, index=False)
     user_data = pd.read_csv(csv_file_path)
-    print(user_data)
+
 else:
     #if table does not exist on AWS server, we will check if it exists on the final file(which is a locally saved copy)
     if os.path.exists(csv_file_path):
@@ -152,7 +176,7 @@ else:
         user_data = pd.DataFrame(columns=["username", "email", "password", "role"])
 #if there is already a local user data table, then we will insert/update the AWS table
 
-#insert_user_data("nus_user_data", user_data)     
+   
 
 def get_user_data():
     return pd.read_csv(csv_file_path)
@@ -162,12 +186,13 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 # Function to add a user to the DataFrame and save to CSV
-def add_user(username, email, password, role):
+def add_user(username, email, password, role, user_id):
     user_data = pd.read_csv(csv_file_path)
     hashed_password = hash_password(password)
-    user_data.loc[len(user_data)+1] = [username, email, hashed_password, role]
+    user_data.loc[len(user_data)+1] = [username, email, hashed_password, role, user_id]
     user_data.to_csv(csv_file_path, index=False)  # Save to CSV
-    insert_user_data("nus_user_data", user_data)
+    user_data = pd.read_csv(csv_file_path)
+    update_table("nus_user_data", user_data)
     print("added")
 
 # Function to check user credentials
@@ -263,7 +288,7 @@ def user_update():
                 user_data.to_csv(csv_file_path, index=False)
                 #user_data = pd.read_csv(csv_file_path)
                 #print(user_data)
-                update_table("nus_user_data", user_data)
+                delete_user_from_cloud("nus_user_data", user_to_delete)
                 st.success(f"User '{user_to_delete}' has been deleted.")
             else:
                 st.error("Please select a user to delete.")
@@ -355,6 +380,7 @@ def change_password():
 # This function creates the sign up form for the admin to create account for new users
 # The various vailidation for username, email and password will still hold.
 def sign_up():
+    user_data = pd.read_csv(csv_file_path)
     with st.form(key = "Create User", clear_on_submit=True):
         st.subheader(":green[Create User]")
         username = st.text_input(":blue[Username]")
@@ -374,7 +400,8 @@ def sign_up():
                                 if is_strong_password(password):
                                     if password == password2:
                                         # Add User to DB
-                                        add_user(username, email, password2, role)
+                                        user_id = str(uuid.uuid4())
+                                        add_user(username, email, password2, role, user_id)
                                         st.success("User created successfully!")
                                         st.balloons()
                                     else:
