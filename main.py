@@ -15,18 +15,20 @@ import os
 from datetime import datetime
 from datetime import timedelta
 
-def main():
-    today_date = datetime.now()
-    start_date = today_date - timedelta(days=89)
-    start_date_str = start_date.strftime('%Y-%m-%d')
-    
-    # Step 1: pull data from database
+def main():    
+    # Step 1: pull data from database - keep it commented out
     # pull_raw_data(['contest', 'conversation', 'conversation_feed', 'conversation_like',
     #                 'conversation_reply', 'follow', 'post', 'post_feed', 'post_like', 'season',
     #                 'user', 'user_interest', 'video', 'vote'])
 
-    # Step 2: pull video datasets
-    pull_raw_video_data(['post_feed', 'season', 'user', 'user_interest', 'video', 'vote'])
+    # Step 2: pull video datasets - this is only needed for the first training iteration
+    # pull_raw_video_data(['post_feed', 'season', 'user', 'user_interest', 'video', 'vote'])
+
+    ######### EVERYTHING BELOW THIS WILL BE RUN EVERYDAY AUTOMATICALLY THROUGH THE SCHEDULER #########
+
+    today_date = datetime.now()
+    start_date = today_date - timedelta(days=89)
+    start_date_str = start_date.strftime('%Y-%m-%d')
     
     # Step 3: Extracting the latest Video Data 
     list_of_tables = ['user_interest', 'season', 'video', 'user', 'vote']
@@ -69,9 +71,6 @@ def main():
     # combine_tables_convo()
     # combined_data_2 = pd.read_csv("datasets/final/nus_convo_eval.csv")
     # insert_data("nus_convo_eval", combined_data_2)
-
-    # get dashboard metrics (commented out because i transferred this directly to the dashboard)
-    # get_dashboard_data()
 
 def dashboard_video_spark_job():
     print("Start Spark video like job %s" % threading.current_thread())
