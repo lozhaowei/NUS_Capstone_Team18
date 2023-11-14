@@ -13,7 +13,8 @@ from streamlit_extras.switch_page_button import switch_page
 from src.data.make_datasets import pull_raw_data
 from decouple import config
 
-# This pages comprises of the various components of user authentication that will be used for our user login and management process
+# This page comprises of the various components of user authentication that will be used
+# for our user login and management process
 
 # Define the path for the CSV file that stores user data
 csv_file_path = "datasets/final/user_data.csv"
@@ -51,13 +52,15 @@ def check_table_exist(table_name):
         if not table_exists:
             print("table does not exist in AWS, creating new table")
             columns = {
+                'user_id': 'VARCHAR(255)',
                 'username': 'VARCHAR(45)',
                 'email': 'VARCHAR(45)',
                 'password': 'VARCHAR(255)',
-                'role': 'VARCHAR(45)',
-                'user_id': 'VARCHAR(255)'
+                'role': 'VARCHAR(45)'
             }
-            create_table_query = f"CREATE TABLE {table_name} ({', '.join([f'{col} {datatype}' for col, datatype in columns.items()])}, PRIMARY KEY (user_id))"
+            create_table_query = f"CREATE TABLE {table_name} " \
+                                 f"({', '.join([f'{col} {datatype}' for col, datatype in columns.items()])}, " \
+                                 f"PRIMARY KEY (user_id))"
             cursor.execute(create_table_query)
             conn.close()
             return False
@@ -88,7 +91,8 @@ def insert_user_data(table_name, data):
                 SELECT 1 FROM {table_name} WHERE `user_id` = %s AND `username` = %s
             )
             '''
-            cursor.execute(insert_query, (row['username'], row['email'], row['password'], row['role'], row['user_id'], row['username']))
+            cursor.execute(insert_query, (row['username'], row['email'], row['password'], row['role'],
+                                          row['user_id'], row['username']))
         
         conn.commit()
         conn.close()
@@ -176,7 +180,7 @@ else:
         user_data = pd.DataFrame(columns=["username", "email", "password", "role"])
 #if there is already a local user data table, then we will insert/update the AWS table
 
-   
+
 
 def get_user_data():
     return pd.read_csv(csv_file_path)
@@ -459,7 +463,7 @@ def login_with_remember_me():
     username = st.text_input("Username", key="unique username")
     password = st.text_input("Password", type="password")
     remember_me = st.checkbox(":green[Remember Me]", key="unique remember me")
-    
+
     if st.button("Login"):
         if remember_me:
             if authenticate(username, password):
@@ -472,3 +476,28 @@ def login_with_remember_me():
             st.text("Welcome! You can now navigate through the different pages")
         else:
             st.error("Login failed. Please check your credentials.")
+
+def get_user_id(username):
+    """
+    Queries database to get user id using username
+    :param username: username
+    :return: user id (uuid) if valid username, else return empty string
+    """
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        query = '''
+                SELECT user_id FROM nus_user_data
+                WHERE username = %s;
+                '''
+
+        cursor.execute(query, username)
+        result = cursor.fetchone()
+
+        conn.close()
+
+        return result[0] if result is not None else ''
+
+    except Exception as e:
+        print("Error:", e)
