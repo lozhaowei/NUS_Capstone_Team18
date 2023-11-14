@@ -3,6 +3,9 @@ import pyarrow.feather as feather
 from src.data import database
 
 def write_feather_data(table, df, data_dir):
+    """ 
+    Helper function to create feather files and saving it to the desired directories
+    """
     os.makedirs(data_dir, exist_ok=True)
 
     feather_file_path = os.path.join(data_dir, f'{table}.feather')
@@ -11,6 +14,10 @@ def write_feather_data(table, df, data_dir):
     print(f"Table '{table}' saved as '{feather_file_path}'")
 
 def pull_raw_data(list_of_tables):
+    """ 
+    Function which pulls raw data from the MySQL Database 
+    :param list_of_tables: refers to the list of tables from which we will query all the rows
+    """
     try:
         for table in list_of_tables:
             query = f"SELECT * FROM {table}"
@@ -26,6 +33,10 @@ def pull_raw_data(list_of_tables):
 
 
 def pull_raw_video_data(list_of_tables):
+    """ 
+    Function which pulls raw video relarted data from the MySQL Database 
+    :param list_of_tables: refers to the list of tables from which we will query all the rows
+    """
     try:
         for table in list_of_tables:
             query = f"SELECT * FROM {table}"
@@ -41,6 +52,12 @@ def pull_raw_video_data(list_of_tables):
 
 
 def pull_latest_data_and_combine(list_of_tables, existing_data_dir, latest_data_dir):
+    """ 
+    Pulls the last 24 hours data for from the specified tables and combines this new data with the existing saved tables 
+    :param list_of_tables: refers to the list of tables from which we will query the last 24 hours
+    :param existing_data_dir: refers to the path of the existing tables which we want to combine our new data with
+    :param latest_data_dir: refers to the path of where we would like to save our combined tables
+    """
     try:
         for table in list_of_tables:
             # Define the appropriate datetime column for each table

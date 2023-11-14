@@ -27,7 +27,7 @@ def main():
     # Step 2: pull video datasets - this is only needed for the first training iteration
     # pull_raw_video_data(['post_feed', 'season', 'user', 'user_interest', 'video', 'vote'])
 
-    ######### EVERYTHING BELOW THIS WILL BE RUN EVERYDAY AUTOMATICALLY THROUGH THE SCHEDULER #########
+    ######### EVERYTHING BELOW THIS WILL BE RUN EVERYDAY EVERYDAY THROUGH THE SCHEDULER #########
 
     today_date = datetime.now()
     start_date = today_date - timedelta(days=89)

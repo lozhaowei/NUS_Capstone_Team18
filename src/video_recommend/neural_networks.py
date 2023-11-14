@@ -10,6 +10,15 @@ from datetime import datetime, timedelta
 from typing import Tuple
 
 def run_ncf(start_date: str) -> pd.DataFrame:
+    """
+    Run Neural Collaborative Filtering (NCF) recommender system and evaluate its performance.
+
+    Parameters:
+    :param start_date: Starting date for training the model.
+
+    Returns:
+    :return: DataFrame containing evaluation metrics for the NCF model.
+    """
     # Load your data
     user_interest_df = pd.read_feather('datasets/raw/user_interest.feather')
     user_df = pd.read_feather('datasets/raw/user.feather')

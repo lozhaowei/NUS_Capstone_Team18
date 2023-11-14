@@ -21,14 +21,32 @@ CONN_PARAMS = {
     'database': config('DB_NAME'),
 }
 def get_end_date() -> str:
-    # Calculate end date as 2 weeks before today
+    """
+    Calculate the end date as 2 weeks before today.
+
+    Returns:
+    :return: End date in the format '%Y-%m-%d'.
+    """
     today = datetime.now()
     end_date = (today - timedelta(weeks=2)).strftime('%Y-%m-%d')
     return end_date
 
 def create_df(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
                               video_df: pd.DataFrame, vote_df: pd.DataFrame, date: datetime):
-    
+    """
+    Create dataframes for user interest matrix, user upvote category matrix, interaction matrix, and test dataset.
+
+    Parameters:
+    :param user_interest_df: DataFrame containing user interest data.
+    :param user_df: DataFrame containing user data.
+    :param season_df: DataFrame containing season data.
+    :param video_df: DataFrame containing video data.
+    :param vote_df: DataFrame containing vote data.
+    :param date: The date until which the data needs to be considered.
+
+    Returns:
+    :return: Tuple containing interaction dataframe and test dataframe.
+    """
     #Create user interest matrix
     user_interest_df = user_df["id"].to_frame().merge(user_interest_df[user_interest_df["updated_at"] <= date], left_on="id", right_on="user_id", how="left", suffixes=["_user", "_interest"])
     user_interest_df["count"] = 1
@@ -79,18 +97,65 @@ def create_df(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: 
     return interaction_df, test_df
 
 def find_top_k_videos(user_id, k, prediction_df):
+    """
+    Find the top K videos for a given user based on predictions.
+
+    Parameters:
+    :param user_id: User ID for whom predictions are made.
+    :param k: Number of top videos to retrieve.
+    :param prediction_df: DataFrame containing predictions.
+
+    Returns:
+    :return: DataFrame containing top K videos for the user.
+    """
     return prediction_df[prediction_df.index.get_level_values("user_id") == user_id].nlargest(k, "prediction")
 
 def hit_ratio_at_k(y_true, y_pred, K):
+    """
+    Calculate hit ratio at K.
+
+    Parameters:
+    :param y_true: True values.
+    :param y_pred: Predicted values.
+    :param K: Number of top items to consider.
+
+    Returns:
+    :return: 1 if at least one relevant item is in top-K, 0 otherwise.
+    """
     top_k_indices = np.argsort(-np.array(y_pred))[:K]
     return int(any(y_true[i] == 1 for i in top_k_indices))  # 1 if at least one relevant item is in top-K, 0 otherwise
 
 def ndcg_at_k(y_true, y_pred, K):
+    """
+    Calculate NDCG at K.
+
+    Parameters:
+    :param y_true: True values.
+    :param y_pred: Predicted values.
+    :param K: Number of top items to consider.
+
+    Returns:
+    :return: NDCG score.
+    """
     y_true = np.array(y_true)
     y_pred = np.array(y_pred) 
     return ndcg_score([y_true], [y_pred], k=K)
 
 def get_summary_statistics(vote_df, video_df, train_df, test_df, date, K):
+    """
+    Get summary statistics for the model.
+
+    Parameters:
+    :param vote_df: DataFrame containing vote data.
+    :param video_df: DataFrame containing video data.
+    :param train_df: DataFrame containing training data.
+    :param test_df: DataFrame containing test data.
+    :param date: The date until which the data needs to be considered.
+    :param K: Number of top items to consider.
+
+    Returns:
+    :return: DataFrame containing summary statistics.
+    """
     train_df.drop(columns="created_at", inplace=True)
     test_df.drop(columns="created_at", inplace=True)
     vote_test = vote_df[vote_df["created_at"] > date]
@@ -138,6 +203,13 @@ def get_summary_statistics(vote_df, video_df, train_df, test_df, date, K):
     return model_statistics
 
 def run_random_forest(date, K):
+    """
+    Run Random Forest model and evaluate its performance.
+
+    Parameters:
+    :param date: The date until which the data needs to be considered.
+    :param K: Number of top items to consider.
+    """
     user_interest_df = pd.read_feather('datasets/raw_new/user_interest.feather')
     user_df = pd.read_feather('datasets/raw_new/user.feather')
     season_df = pd.read_feather('datasets/raw_new/season.feather')
