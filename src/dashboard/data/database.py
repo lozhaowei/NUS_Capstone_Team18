@@ -73,7 +73,7 @@ def get_upvote_percentage_for_day(table_name, interacted_entity, interacted_pct)
 def insert_model_feedback(data):
     """
     only inserts one row at a time into nus_model_feedback table
-    :param data: dictionary - column names are keys: rating, feedback, model, recommended_item
+    :param data: dictionary - column names are keys: rating, feedback, model, recommended_item, user_id, role
     :return: 0 if success, 1 if failed
     """
     if data is None:
@@ -89,8 +89,8 @@ def insert_model_feedback(data):
         cursor = conn.cursor()
 
         insert_query = f"INSERT INTO nus_model_feedback " \
-                       f"(rating, feedback, model, recommended_item, role) " \
-                       f"VALUES (%(rating)s, %(feedback)s, %(model)s, %(recommended_item)s, %(role)s)"
+                       f"(rating, feedback, model, recommended_item, user_id, role) " \
+                       f"VALUES (%(rating)s, %(feedback)s, %(model)s, %(recommended_item)s, %(user_id)s, %(role)s)"
         print(insert_query)
         cursor.execute(insert_query, data)
 

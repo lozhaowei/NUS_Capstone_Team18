@@ -4,6 +4,7 @@ from streamlit_star_rating import st_star_rating
 from src.dashboard.components.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
     get_graph_for_summary_metric, get_graph_for_real_time_component
 from src.dashboard.data.database import insert_model_feedback, get_model_ratings, get_upvote_percentage_for_day
+from src.dashboard.user_authen.authenticate_components import get_user_id
 from src.dashboard.data.spark_pipeline import SparkPipeline
 
 
@@ -178,14 +179,16 @@ def user_feedback_component(recommended_item, model_list):
             if submitted:
                 if feedback == '':
                     st.warning('Please enter feedback before submitting!')
-                else:
-                    # TODO add user id ?
+                    return
+
+                if 'username' and 'role' in st.session_state:
                     if insert_model_feedback({'feedback': feedback, 'rating': rating, 'model': model,
                                               'recommended_item': recommended_item,
+                                              'user_id': get_user_id(st.session_state.username),
                                               'role':  st.session_state.role}) == 0:
                         st.success('Feedback submitted!')
-                    else:
-                        st.warning('Error submitting feedback!')
+                else:
+                    st.warning('Error submitting feedback!')
 
     except Exception as e:
         print('Error loading user feedback form: ', e)
