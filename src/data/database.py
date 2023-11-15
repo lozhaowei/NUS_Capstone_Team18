@@ -123,15 +123,15 @@ def combine_tables_convo():
     """ 
     Combined the different evaluation tables into a mega table which could directly be sent to the DB
     """
-    table1 = pd.read_csv('datasets/final/random_forest_convo.csv')
-    table2 = pd.read_csv('datasets/final/knn_convo.csv')
+    table1 = pd.read_csv('datasets/final_new/random_forest_convo.csv')
+    table2 = pd.read_csv('datasets/final_new/als_conversation.csv')
 
     # Combine tables
     combined_table = pd.concat([table1, table2], ignore_index=True)
 
-    output_folder = 'datasets/final'
+    output_folder = 'datasets/final-new'
     os.makedirs(output_folder, exist_ok=True)
-    output_path = os.path.join(output_folder, "nus_convo_eval.csv")
+    output_path = os.path.join(output_folder, "nus_convo_eval_2.csv")
     combined_table.to_csv(output_path, index=False)
     
     print(f"Combined data saved to '{output_path}' successfully.")
