@@ -28,7 +28,7 @@ def main():
     # Step 2: pull video datasets - this is only needed for the first training iteration
     # pull_raw_video_data(['post_feed', 'season', 'user', 'user_interest', 'video', 'vote'])
 
-    ######### EVERYTHING BELOW THIS WILL BE RUN EVERYDAY EVERYDAY THROUGH THE SCHEDULER #########
+    # ######### EVERYTHING BELOW THIS WILL BE RUN EVERYDAY EVERYDAY THROUGH THE SCHEDULER #########
 
     today_date = datetime.now()
     start_date = today_date - timedelta(days=89)
@@ -63,21 +63,19 @@ def main():
 
     insert_data("nus_video_eval_2", combined_data)
 
-    # # Step 10: Run the 3 models for Conversations Recommendations
+    # Step 10: Run the 3 models for Conversations Recommendations
     # conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
     # conversation_categories = pd.read_feather("datasets/final/conversation_with_categories.feather")
     # knn_eval_convo = run_collaborative_recommender('2023-09-02', 10, 4, conversation_like, conversation_categories)
     # print(knn_eval_convo)
     # random_forest_eval_convo = run_model_convo()
     # print(random_forest_eval_convo)
-    
-    # conversation_like cant be uploaded right now
-    als_eval_convo = run_als_recommender('2023-10-19', 20, 7, conversation_like)
 
-    # # Step 11: Combine the 3 evaluation tables into 1 mega table
-    # combine_tables_convo()
-    # combined_data_2 = pd.read_csv("datasets/final/nus_convo_eval.csv")
-    # insert_data("nus_convo_eval", combined_data_2)
+    # Step 11: Combine the 3 evaluation tables into 1 mega table
+    combine_tables_convo()
+    clean_csv("datasets/final_new/nus_convo_eval_2.csv", "datasets/final_new/nus_convo_eval_2.csv")
+    combined_data_2 = pd.read_csv("datasets/final_new/nus_convo_eval_2.csv")
+    insert_data("nus_convo_eval_2", combined_data_2)
 
 def dashboard_video_spark_job():
     print("Start Spark video like job %s" % threading.current_thread())
@@ -109,6 +107,6 @@ if __name__ == "__main__":
     schedule.every().day.at("18:00").do(run_threaded, dashboard_video_spark_job)
     schedule.every().day.at("18:00").do(run_threaded, dashboard_conversation_spark_job)
 
-# while True:
+while True:
     schedule.run_pending()
     time.sleep(3)

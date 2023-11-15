@@ -129,7 +129,7 @@ def combine_tables_convo():
     # Combine tables
     combined_table = pd.concat([table1, table2], ignore_index=True)
 
-    output_folder = 'datasets/final-new'
+    output_folder = 'datasets/final_new'
     os.makedirs(output_folder, exist_ok=True)
     output_path = os.path.join(output_folder, "nus_convo_eval_2.csv")
     combined_table.to_csv(output_path, index=False)
