@@ -13,7 +13,8 @@ from streamlit_extras.switch_page_button import switch_page
 from src.data.make_datasets import pull_raw_data
 from decouple import config
 
-# This pages comprises of the various components of user authentication that will be used for our user login and management process
+# This page comprises of the various components of user authentication that will be used
+# for our user login and management process
 
 # Define the path for the CSV file that stores user data
 csv_file_path = "datasets/final/user_data.csv"
@@ -51,13 +52,15 @@ def check_table_exist(table_name):
         if not table_exists:
             print("table does not exist in AWS, creating new table")
             columns = {
+                'user_id': 'VARCHAR(255)',
                 'username': 'VARCHAR(45)',
                 'email': 'VARCHAR(45)',
                 'password': 'VARCHAR(255)',
-                'role': 'VARCHAR(45)',
-                'user_id': 'VARCHAR(255)'
+                'role': 'VARCHAR(45)'
             }
-            create_table_query = f"CREATE TABLE {table_name} ({', '.join([f'{col} {datatype}' for col, datatype in columns.items()])}, PRIMARY KEY (user_id))"
+            create_table_query = f"CREATE TABLE {table_name} " \
+                                 f"({', '.join([f'{col} {datatype}' for col, datatype in columns.items()])}, " \
+                                 f"PRIMARY KEY (user_id))"
             cursor.execute(create_table_query)
             conn.close()
             return False
@@ -67,7 +70,7 @@ def check_table_exist(table_name):
 
     except Exception as e:
         print("Error:", e)
-
+        
 def update_table(table_name, data):
     """
     This function updates the table in the AWS when there are changes made to the user credentials
@@ -449,7 +452,7 @@ def login_with_remember_me():
     username = st.text_input("Username", key="unique username")
     password = st.text_input("Password", type="password")
     remember_me = st.checkbox(":green[Remember Me]", key="unique remember me")
-    
+
     if st.button("Login"):
         if remember_me:
             if authenticate(username, password):
@@ -462,3 +465,28 @@ def login_with_remember_me():
             st.text("Welcome! You can now navigate through the different pages")
         else:
             st.error("Login failed. Please check your credentials.")
+
+def get_user_id(username):
+    """
+    Queries database to get user id using username
+    :param username: username
+    :return: user id (uuid) if valid username, else return empty string
+    """
+    try:
+        conn = pymysql.connect(**CONN_PARAMS)
+        cursor = conn.cursor()
+
+        query = '''
+                SELECT user_id FROM nus_user_data
+                WHERE username = %s;
+                '''
+
+        cursor.execute(query, username)
+        result = cursor.fetchone()
+
+        conn.close()
+
+        return result[0] if result is not None else ''
+
+    except Exception as e:
+        print("Error:", e)

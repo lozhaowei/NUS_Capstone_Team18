@@ -23,14 +23,27 @@ CONN_PARAMS = {
 }
 
 def get_end_date() -> str:
-    # Calculate end date as 2 weeks before today
+    """
+    Calculate end date as 2 weeks before today.
+
+    Returns:
+    :return: End date in the format '%Y-%m-%d'.
+    """
     today = datetime.now()
     end_date = (today - timedelta(weeks=1)).strftime('%Y-%m-%d')
     return end_date
 
 
 def get_num_cycles(start_date: str) -> int:
-    # Get today's date
+    """
+    Get the number of cycles based on the start date.
+
+    Parameters:
+    :param start_date: Starting date for training cycles.
+
+    Returns:
+    :return: Number of cycles.
+    """
     today_date = datetime.now().strftime('%Y-%m-%d')
     start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
     end_datetime = datetime.strptime(today_date, '%Y-%m-%d')
@@ -39,12 +52,38 @@ def get_num_cycles(start_date: str) -> int:
     return date_difference
 
 def train_test_split_for_data(data: pd.DataFrame, date_col: str, start_date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Split data into training and testing sets based on the provided start date.
+
+    Parameters:
+    :param data: DataFrame to be split.
+    :param date_col: Name of the column containing date information.
+    :param start_date: Starting date for training.
+
+    Returns:
+    :return: Tuple containing training and testing sets.
+    """
     train_data = data[data[date_col] <= start_date]
     test_data = data[(data[date_col] > start_date) & (data[date_col] <= get_end_date())]
     return train_data, test_data
 
 def create_interaction_matrices(user_interest_df: pd.DataFrame, user_df: pd.DataFrame, season_df: pd.DataFrame, 
                               video_df: pd.DataFrame, vote_df: pd.DataFrame, post_feed_df: pd.DataFrame, date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Create interaction matrices based on user interest, video embeddings, and user votes.
+
+    Parameters:
+    :param user_interest_df: DataFrame containing user interest data.
+    :param user_df: DataFrame containing user data.
+    :param season_df: DataFrame containing season data.
+    :param video_df: DataFrame containing video data.
+    :param vote_df: DataFrame containing vote data.
+    :param post_feed_df: DataFrame containing post feed data.
+    :param date: The date until which the data needs to be considered.
+
+    Returns:
+    :return: Tuple containing weighted interaction matrix and video category matrix.
+    """
     # create the initial user interest matrix
     user_interest_train, _ = train_test_split_for_data(user_interest_df, 'updated_at', date)
     user_interest_train['count'] = 1
@@ -85,14 +124,36 @@ def create_interaction_matrices(user_interest_df: pd.DataFrame, user_df: pd.Data
     return weighted_interaction_matrix, video_category_matrix
 
 def svd_similarity(user_id, video_id, user_features, video_features):
-    # Apply matrix factorization (SVD) similarity function 
+    """
+    Calculate SVD similarity between a user and a video.
+
+    Parameters:
+    :param user_id: User ID.
+    :param video_id: Video ID.
+    :param user_features: User features matrix.
+    :param video_features: Video features matrix.
+
+    Returns:
+    :return: Similarity score.
+    """
     user_features_vector = user_features.loc[user_id].values
     video_features_vector = video_features.loc[video_id].values
     similarity_score = np.dot(user_features_vector, video_features_vector)
     return similarity_score
 
 def svd_similarity_2(user_id, video_id, user_features, video_features):
-    # Apply matrix factorization (SVD) similarity function 
+    """
+    Calculate an alternative SVD similarity between a user and a video.
+
+    Parameters:
+    :param user_id: User ID.
+    :param video_id: Video ID.
+    :param user_features: User features matrix.
+    :param video_features: Video features matrix.
+
+    Returns:
+    :return: Similarity score.
+    """
     user_features_vector = user_features.loc[user_id].values
     video_features_vector = video_features.loc[video_id].values
     distance = np.linalg.norm(user_features_vector - video_features_vector)
@@ -101,6 +162,18 @@ def svd_similarity_2(user_id, video_id, user_features, video_features):
     return similarity_score
 
 def find_top_videos(user_id, k, weighted_interaction_matrix, video_category_matrix):
+    """
+    Find the top K videos for a user based on SVD similarity.
+
+    Parameters:
+    :param user_id: User ID.
+    :param k: Number of top videos to retrieve.
+    :param weighted_interaction_matrix: Weighted interaction matrix.
+    :param video_category_matrix: Video category matrix.
+
+    Returns:
+    :return: Indices of the top K videos.
+    """
     similarity_matrix = svd_similarity(weighted_interaction_matrix, video_category_matrix)
     user_index = weighted_interaction_matrix.index.get_loc(user_id)
     similarities = similarity_matrix[user_index]
@@ -108,20 +181,68 @@ def find_top_videos(user_id, k, weighted_interaction_matrix, video_category_matr
     return top_k_indices
 
 def find_top_k_videos(user_id, k, weighted_interaction_matrix, video_category_matrix):
+    """
+    Find the top K videos for a user based on SVD similarity.
+
+    Parameters:
+    :param user_id: User ID.
+    :param k: Number of top videos to retrieve.
+    :param weighted_interaction_matrix: Weighted interaction matrix.
+    :param video_category_matrix: Video category matrix.
+
+    Returns:
+    :return: DataFrame with top K videos and their similarity scores.
+    """
     recommendations = pd.DataFrame(index=video_category_matrix.index)
     recommendations['similarity'] = recommendations.index.map(lambda x: svd_similarity(user_id, x, weighted_interaction_matrix, video_category_matrix))
     return recommendations.nsmallest(k, 'similarity')
 
 def hit_ratio_at_k(y_true, y_pred, K):
+    """
+    Find the top K videos for a user based on SVD similarity.
+
+    Parameters:
+    :param user_id: User ID.
+    :param k: Number of top videos to retrieve.
+    :param weighted_interaction_matrix: Weighted interaction matrix.
+    :param video_category_matrix: Video category matrix.
+
+    Returns:
+    :return: DataFrame with top K videos and their similarity scores.
+    """
     top_k_indices = np.argsort(-np.array(y_pred))[:K]
     return int(any(y_true[i] == 1 for i in top_k_indices))  # 1 if at least one relevant item is in top-K, 0 otherwise
 
 def ndcg_at_k(y_true, y_pred, K):
+    """
+    Calculate NDCG at K.
+
+    Parameters:
+    :param y_true: True values.
+    :param y_pred: Predicted values.
+    :param K: Number of top items to consider.
+
+    Returns:
+    :return: NDCG score.
+    """
     y_true = np.array(y_true)
     y_pred = np.array(y_pred) 
     return ndcg_score([y_true], [y_pred], k=K)
 
 def get_summary_statistics(vote_df, weighted_interaction_matrix, video_category_matrix, date, K):
+    """
+    Get summary statistics for the model.
+
+    Parameters:
+    :param vote_df: DataFrame containing vote data.
+    :param weighted_interaction_matrix: Weighted interaction matrix.
+    :param video_category_matrix: Video category matrix.
+    :param date: The date until which the data needs to be considered.
+    :param K: Number of top items to consider.
+
+    Returns:
+    :return: DataFrame containing summary statistics.
+    """
     _, vote_test = train_test_split_for_data(vote_df, 'created_at', date)
     vote_test['created_at'] = vote_test['created_at'].dt.date
     model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
@@ -161,6 +282,14 @@ def get_summary_statistics(vote_df, weighted_interaction_matrix, video_category_
     return model_statistics     
 
 def run_svd_recommender(date, K, num_cycles):
+    """
+    Run SVD recommender model and evaluate its performance.
+
+    Parameters:
+    :param date: The date until which the data needs to be considered.
+    :param K: Number of top items to consider.
+    :param num_cycles: Number of training cycles.
+    """
     user_interest_df = pd.read_feather('datasets/raw/user_interest.feather')
     user_df = pd.read_feather('datasets/raw/user.feather')
     season_df = pd.read_feather('datasets/raw/season.feather')

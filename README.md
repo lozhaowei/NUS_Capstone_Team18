@@ -33,5 +33,14 @@ The incorporation of a real-time scheduler into our recommendation system framew
 
 All models can be found in their respective src folders.
 
+### Launching the Dashboard
+
+1. Ensure that the AWS database is open for connections.
+2. Run the dashboard with the following command:
+```
+python -m streamlit run src/dashboard/Home.py
+```
+3. Navigate to browser and log in.
+
 ### Project Report
 Our detailed report can be found here: https://docs.google.com/document/d/1s5PVFjjTz8m-oRtuiF0NurSGWRHOZ4A0sw86d-KDYO0/edit?usp=sharing

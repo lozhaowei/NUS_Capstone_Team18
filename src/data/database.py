@@ -14,6 +14,10 @@ CONN_PARAMS = {
 }
 
 def query_database(query):
+    """
+    Establishes a connection with MySQL Database to read queries
+    :param query: will be placed as the param of the function
+    """
     try:
         conn = pymysql.connect(**CONN_PARAMS)
 
@@ -26,6 +30,13 @@ def query_database(query):
         print("Error:", e)
 
 def insert_data(table_name, data):
+    """
+    Inserts data into the desired table of the Database. 
+    If the table does not exist, it creates a new one.
+    If the table exists, it simply updates the values of the additional rows
+    :param table_name: identifer of the table in the DB
+    :param data: In the form of a dataframe which is expected to be sent to the DB
+    """
     try:
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
@@ -89,6 +100,9 @@ def insert_data(table_name, data):
         print("Error:", e)
 
 def combine_tables_video():
+    """ 
+    Combined the different evaluation tables into a mega table which could directly be sent to the DB
+    """
     table1 = pd.read_csv('datasets/final_new/random_forest_video.csv')
     table2 = pd.read_csv('datasets/final_new/knn_video.csv')
     table3 = pd.read_csv('datasets/final_new/svd_video.csv')
@@ -106,6 +120,9 @@ def combine_tables_video():
     return output_path
 
 def combine_tables_convo():
+    """ 
+    Combined the different evaluation tables into a mega table which could directly be sent to the DB
+    """
     table1 = pd.read_csv('datasets/final/random_forest_convo.csv')
     table2 = pd.read_csv('datasets/final/knn_convo.csv')
 
@@ -121,6 +138,10 @@ def combine_tables_convo():
     return output_path
 
 def is_valid_datetime(date_str):
+    """ 
+    Helper function to convert the date-string value into a date-time object
+    :param date_str: it is expressed as YYYY/MM/DD
+    """
     try:
         datetime.strptime(date_str, '%Y-%m-%d')
         return True
@@ -128,6 +149,11 @@ def is_valid_datetime(date_str):
         return False
 
 def clean_csv(input_csv_path, output_csv_path):
+    """ 
+    Helper function to clean the CSV before being pushed into the DB
+    :param input_csv_path: the path for extracting the pre-processed CSV
+    :param output_csv_path: the path for extracting the processed CSV
+    """
     with open(input_csv_path, 'r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         rows = list(csv_reader)
