@@ -7,6 +7,7 @@ from src.video_recommend.random_forest import run_random_forest
 from src.video_recommend.neural_networks import run_ncf
 from src.conversation_recommend.cosine_similarity import run_collaborative_recommender
 from src.conversation_recommend.random_forest_convo import run_model_convo
+from src.conversation_recommend.alternating_least_squares import run_als_recommender
 from src.dashboard.data.spark_pipeline import SparkPipeline
 import schedule
 import threading
@@ -69,6 +70,9 @@ def main():
     # print(knn_eval_convo)
     # random_forest_eval_convo = run_model_convo()
     # print(random_forest_eval_convo)
+    
+    # conversation_like cant be uploaded right now
+    als_eval_convo = run_als_recommender('2023-10-19', 20, 7, conversation_like)
 
     # # Step 11: Combine the 3 evaluation tables into 1 mega table
     # combine_tables_convo()
