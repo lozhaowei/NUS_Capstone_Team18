@@ -46,8 +46,8 @@ def check_table_exist(table_name):
         # Query to see if the table exist in the database
         table_exists_query = f"SHOW TABLES LIKE '{table_name}'"
         table_exists = cursor.execute(table_exists_query)
-        # If the table does not exist, we create the table in the AWS server
         
+        # If the table does not exist, we create the table in the AWS server
         if not table_exists:
             print("table does not exist in AWS, creating new table")
             columns = {
@@ -68,40 +68,10 @@ def check_table_exist(table_name):
     except Exception as e:
         print("Error:", e)
 
-# This function inserts the local user data credential table to the AWS server
-def insert_user_data(table_name, data):
-    try:
-        conn = pymysql.connect(**CONN_PARAMS)
-        cursor = conn.cursor()
-
-        # Convert 'username' column to string before insertion
-        data['username'] = data['username'].astype(str)
-        # Convert NaN values to None for proper insertion
-        data = data.where(pd.notna(data), None)
-
-        # Insert data only if the 'userid and is unique
-        for _, row in data.iterrows():
-            insert_query = f'''
-            INSERT INTO {table_name} (`username`, `email`, `password`, `role`, `user_id`) 
-            SELECT %s, %s, %s, %s, %s
-            WHERE NOT EXISTS (
-                SELECT 1 FROM {table_name} WHERE `user_id` = %s AND `username` = %s
-            )
-            '''
-            cursor.execute(insert_query, (row['username'], row['email'], row['password'], row['role'], row['user_id'], row['username']))
-        
-        conn.commit()
-        conn.close()
-
-        print(f"Data inserted in MySQL table '{table_name}' successfully.")
-
-    except Exception as e:
-        print("Error:", e)
-
-#user_data = pd.read_csv(csv_file_path)
-#insert_user_data("nus_user_data", user_data)
-
 def update_table(table_name, data):
+    """
+    This function updates the table in the AWS when there are changes made to the user credentials
+    """
     try:
         conn = pymysql.connect(**CONN_PARAMS)
         cursor = conn.cursor()
@@ -113,12 +83,13 @@ def update_table(table_name, data):
             role = row['role']
             user_id = row['user_id']
 
+            # First check if the username exists in the AWS Server table
+            # If username exists, then the user credential is updated
+            # If username does not exist, then a new row will be created in the table
             query = f"SELECT COUNT(*) FROM {table_name} WHERE username = '{username}'"
             cursor.execute(query)
             record_exists = cursor.fetchone()[0]
-            
-            print("Checking record")
-
+        
             if record_exists:
                 # Update the existing record
                 update_query = f"UPDATE {table_name} SET email = '{email}', password = '{password}', role = '{role}' WHERE username = '{username}'"
@@ -126,7 +97,7 @@ def update_table(table_name, data):
             else:
                 # Insert a new record
                 print("Add new record")
-                insert_query = f"INSERT INTO {table_name} (username, email, password, role, user_id) VALUES ('{username}', '{email}', '{password}', '{role}', '{user_id}')"
+                insert_query = f"INSERT INTO {table_name} (user_id, username, email, password, role) VALUES ('{user_id}', '{username}', '{email}', '{password}', '{role}')"
                 cursor.execute(insert_query)
 
         conn.commit()
@@ -157,6 +128,20 @@ def delete_user_from_cloud(table_name, user_name):
     except Exception as e:
         print("Error:", e)
 
+
+
+'''
+This part of the code is intentially left as global as it is desired that the table updates itself whenever there is a refresh to the webpage
+instead of accessing the table once every operation
+The logic of accessing the table is as following
+1. First check if the table exists in the AWS Server, it the table exists, the table is pulled from the server 
+    saved locally as a feather file, then opened and saved as a csv file for modification
+2. If the table does not exist in the AWS Server, we will check if there is a local csv file of the user credentials,
+    this works in case the AWS server data suddenly have some problem that makes the table being unavailable
+3. If there are no table found on both the AWS server and on local drive, an empty dataframe will be created to hold the information
+'''
+
+
 #if the table exists on AWS server, then a feather file will be created in datasets/raw
 if check_table_exist(user_data_table): 
     print("getting data from AWS")
@@ -174,9 +159,6 @@ else:
         print("new df")
         #if there isnt a file on both directory, then create a new empty table to store user data
         user_data = pd.DataFrame(columns=["username", "email", "password", "role"])
-#if there is already a local user data table, then we will insert/update the AWS table
-
-   
 
 def get_user_data():
     return pd.read_csv(csv_file_path)
@@ -189,9 +171,10 @@ def hash_password(password):
 def add_user(username, email, password, role, user_id):
     user_data = pd.read_csv(csv_file_path)
     hashed_password = hash_password(password)
-    user_data.loc[len(user_data)+1] = [username, email, hashed_password, role, user_id]
+    user_data.loc[len(user_data)+1] = [user_id, username, email, hashed_password, role]
     user_data.to_csv(csv_file_path, index=False)  # Save to CSV
     user_data = pd.read_csv(csv_file_path)
+    # It also updates the information to AWS
     update_table("nus_user_data", user_data)
     print("added")
 
@@ -268,6 +251,13 @@ def is_strong_password(password):
     return True
 
 # This function allows the different credential of users to be updated
+'''
+The update here is done by updating both the local csv file and the AWS server table, 
+the idea is always to keep two copies in case there is a loss of data
+The AWS Server table will be the one that we constantly take reference from
+The local csv user_data is mainly for a back up reference
+Hence, the function will be always doing updates to both the local csv file and the AWS user_data table
+'''
 def user_update():
     user_data = pd.read_csv(csv_file_path)
     # The selectbox allows the admins to select different operations
