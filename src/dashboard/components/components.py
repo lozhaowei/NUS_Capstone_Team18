@@ -53,7 +53,7 @@ def real_time_data_visualisation_component(entity, filtered_data, models):
                                    min_value=min(data["recommendation_date"]),
                                    max_value=max(data["recommendation_date"]))
 
-        available_metrics = [column for column in data.columns if column != "recommendation_date"]
+        available_metrics = [column for column in data.columns if column != "recommendation_date" and column != "dt"]
         columns = col3.multiselect("Metrics", options=available_metrics,
                                    default=available_metrics[0])
 

@@ -37,21 +37,21 @@ def get_secret():
     
     return [host, user, password, port, name]
 
-CONN_PARAMS = {
-    'host': get_secret()[0],
-    'user': get_secret()[1],
-    'password': get_secret()[2],
-    'port': int(get_secret()[3]),
-    'database': get_secret()[4],
-}
-
 # CONN_PARAMS = {
-#     'host': config('DB_HOST'),
-#     'user': config('DB_USER'),
-#     'password': config('DB_PASSWORD'),
-#     'port': int(config('DB_PORT')),
-#     'database': config('DB_NAME'),
+#     'host': get_secret()[0],
+#     'user': get_secret()[1],
+#     'password': get_secret()[2],
+#     'port': int(get_secret()[3]),
+#     'database': get_secret()[4],
 # }
+
+CONN_PARAMS = {
+    'host': config('DB_HOST'),
+    'user': config('DB_USER'),
+    'password': config('DB_PASSWORD'),
+    'port': int(config('DB_PORT')),
+    'database': config('DB_NAME'),
+}
 
 def query_database(query):
     """

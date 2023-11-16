@@ -19,14 +19,17 @@ from datetime import datetime, timedelta
 
 warnings.filterwarnings('ignore')
 
-
-def get_end_date(start_date: str) -> str:
-    start_datetime_object = datetime.strptime(start_date, '%Y-%m-%d')
-    end_datetime_object = start_datetime_object + timedelta(days=3)
-    end_date = end_datetime_object.strftime('%Y-%m-%d')
-    return end_date
-
 def get_predicted_scores(user_id, reconstructed_matrix, train_likes_table):
+    """Calculate the scores for each conversation in train_likes_table.
+
+    Args:
+        user_id (str): The identifier of the user that the scores are being calculated for.
+        reconstructed_matrix (np.ndarray): The reconstructed matrix obtained after NMF.
+        train_likes_table (pd.DataFrame): Dataframe with index being conversation id and columns being user id.
+
+    Returns:
+        np.ndarray: The scores for each conversation for specificed user_id.
+    """
     try:
         user_index = list(train_likes_table.columns).index(user_id)
     except ValueError:
@@ -67,6 +70,17 @@ def get_embedding_matrices(convo_likes_df, convo_categories_df, date):
         return user_like_matrix, convo_category_matrix
 
 def get_similarity(user_like_matrix, convo_category_matrix, user_id, convo_id):
+    """Calculates the distance between a specified user_id and convo_id.
+
+    Args:
+        user_like_matrix (pd.DataFrame): Matrix returned from get_embedding_matrices.
+        convo_category_matrix (pd.DataFrame): Matrix returned from get_embedding_matrices.
+        user_id (str): User for which we are calculating similarity.
+        convo_id (str): Conversation for which we are calculating similarity.
+
+    Returns:
+        float: Similarity between a user and a conversation, with 0 being not similar and 1 being extremely similar.
+    """
     try:
         similarity = 1 - spatial.distance.cosine(user_like_matrix.loc[user_id], convo_category_matrix.loc[convo_id])
     except KeyError:
@@ -166,6 +180,15 @@ def statistics(convo_likes_df, convo_categories_df, k, date):
     f1 = f1_score(y_true, y_pred)
 
     def get_top_k_recommendations(user, k):
+        """Gets the top k conversations for a specified user.
+
+        Args:
+            user (str): User for which we are calculating recommendations.
+            k (int): Number of recommendations to return.
+
+        Returns:
+            np.ndarray: The top k conversations that are similar to the user.
+        """
         scores = get_predicted_scores(user, reconstructed_matrix, train_likes_table)
         cosine_similarity_recommendations = pd.DataFrame(index=train_likes_table.index)
         cosine_similarity_recommendations["similarity"] = cosine_similarity_recommendations.index \
