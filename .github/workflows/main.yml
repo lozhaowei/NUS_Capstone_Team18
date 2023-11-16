@@ -1,7 +1,0 @@
-name: db
-env:
-  DB_HOST: localhost
-  DB_USER: ${{ secrets.DB_USER }}
-  DB_PASSWORD: ${{ secrets.DB_USER }}
-  DB_PORT: 3306
-  DB_NAME: recce
