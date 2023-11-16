@@ -38,11 +38,11 @@ def get_secret():
     return [host, user, password, port, name]
 
 CONN_PARAMS = {
-    'host': get_secret[0],
-    'user': get_secret[1],
-    'password': get_secret[2],
-    'port': int(get_secret[3]),
-    'database': get_secret[4],
+    'host': get_secret()[0],
+    'user': get_secret()[1],
+    'password': get_secret()[2],
+    'port': int(get_secret()[3]),
+    'database': get_secret()[4],
 }
 
 # CONN_PARAMS = {
