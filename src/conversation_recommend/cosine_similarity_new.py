@@ -116,19 +116,19 @@ def statistics(df_conversation_like, date):
     y_pred = [1 if score > 0.1 else 0 for score in y_scores]
 
     # Calculate metrics
-    roc_auc = roc_auc_score(y_true, y_scores)
+    roc_auc_score = roc_auc_score(y_true, y_scores)
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred)
     recall = recall_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred)
 
     data = {
-        'datetime': [split_date],
-        'roc auc score': [roc_auc],
+        'dt': [split_date],
+        'roc_auc_score': [roc_auc_score],
         'accuracy': [accuracy],
         'precision': [precision],
         'recall': [recall],
-        'f1 score': [f1],
+        'f1_score': [f1],
         'hit_ratio_k': 0,
         'ndcg_k': 0 
     }
