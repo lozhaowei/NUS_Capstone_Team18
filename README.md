@@ -5,7 +5,7 @@ This project is part of our BT4103 NUS Capstone Final Year Project, which is com
 1. Clone this repositry:
 
 ``` 
-git clone https://github.com/arnav0401/nus_capstone_v2.git
+git clone https://github.com/lozhaowei/nus_capstone_v2.git
 ```
 
 2. Navigate to Cloned Repositry Directory
@@ -26,7 +26,7 @@ pip install --no-cache-dir -r requirements.txt
 python3 main.py
 ```
 ### Data Pipeline
-![Screenshot 2023-11-13 at 11 06 53 AM](https://github.com/arnav0401/nus_capstone_v2/assets/65774796/a061cd3c-6c57-446e-9e43-36261afa6dba)
+![Data Pipeline](data-pipeline.png)
 
 ### Continous Learning Approach 
 The incorporation of a real-time scheduler into our recommendation system framework demonstrates our dedication to staying on top of changing user behaviours and content preferences. The scheduler, which is set to run every day, orchestrates a series of critical actions to guarantee that the recommendation models are constantly updated and matched with the most recent user-interaction dynamics.
