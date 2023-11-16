@@ -3,7 +3,6 @@ import os
 import time
 from pyspark.sql import SparkSession
 from pyspark.conf import SparkConf
-from pyspark.sql.functions import when, sum, count
 from decouple import config
 
 
@@ -65,7 +64,6 @@ class SparkPipeline:
                                             ON rdv.recommended_video_id = v.video_id
                                                 AND rdv.user_id = v.voter_id) t1
                             WHERE rdv_created_at >= (CURRENT_DATE - INTERVAL 2 DAY)
---                             WHERE rdv_created_at >= ('2023-09-26' - INTERVAL 2 DAY) AND rdv_created_at <= '2023-09-26'
                     ) t2
                     GROUP BY DATE(rdv_created_at)
                 """
@@ -153,40 +151,3 @@ class SparkPipeline:
     def close_spark_session(self):
         print('Closing spark session')
         self.spark.stop()
-
-    # Query code but written with spark dataframe functions
-    # def test(self):
-    #     t0 = time.time()
-    #     print("Test spark pipeline")
-    #
-    #     video_df = self.spark.read \
-    #         .format("jdbc") \
-    #         .option("driver", "com.mysql.cj.jdbc.Driver") \
-    #         .option("url", self.url) \
-    #         .option("query", "select user_id, recommended_video_id, date(created_at) as rdv_created_at "
-    #                          "from rs_daily_video_for_user "
-    #                          "where date(created_at) >= ('2023-10-25' - INTERVAL 7 DAY)") \
-    #         .option("user", config('DB_USER')) \
-    #         .option("password", config('DB_PASSWORD')) \
-    #         .load().repartition(1000, "user_id", "recommended_video_id")
-    #
-    #     vote_df = self.spark.read \
-    #         .format("jdbc") \
-    #         .option("driver", "com.mysql.cj.jdbc.Driver") \
-    #         .option("url", self.url) \
-    #         .option("query", "select video_id, voter_id, date(created_at) as v_created_at from vote "
-    #                          "where date(created_at) >= ('2023-10-25' - INTERVAL 7 DAY)") \
-    #         .option("user", config('DB_USER')) \
-    #         .option("password", config('DB_PASSWORD')) \
-    #         .load().dropDuplicates(["video_id", "voter_id"]) \
-    #         .repartition(1000, "video_id", "voter_id")
-    #
-    #     result_df = video_df.join(vote_df, (video_df.user_id == vote_df.voter_id)
-    #                               & (video_df.recommended_video_id == vote_df.video_id), 'left') \
-    #         .withColumn("is_upvote", when(vote_df.v_created_at >= video_df.rdv_created_at, 1).otherwise(0)) \
-    #         .select("is_upvote", "rdv_created_at") \
-    #         .groupBy("rdv_created_at").agg(count("is_upvote"), sum("is_upvote"))
-    #
-    #     video_df.head()
-    #     t1 = time.time()
-    #     print(f"Time taken: {t1 - t0:.2f} seconds")

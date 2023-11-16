@@ -34,7 +34,7 @@ def insert_data(table_name, data):
     Inserts data into the desired table of the Database. 
     If the table does not exist, it creates a new one.
     If the table exists, it simply updates the values of the additional rows
-    :param table_name: identifer of the table in the DB
+    :param table_name: identifier of the table in the DB
     :param data: In the form of a dataframe which is expected to be sent to the DB
     """
     try:
@@ -73,7 +73,8 @@ def insert_data(table_name, data):
         # Insert data only if the combination of 'dt' and 'model' is unique
         for _, row in data.iterrows():
             insert_query = f'''
-            INSERT INTO {table_name} (`dt`, `roc_auc_score`, `accuracy`, `precision`, `recall`, `f1_score`, `hit_ratio_k`, `ndcg_k`, `model`) 
+            INSERT INTO {table_name} (`dt`, `roc_auc_score`, `accuracy`, `precision`, `recall`, `f1_score`, 
+            `hit_ratio_k`, `ndcg_k`, `model`) 
             SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s 
             WHERE NOT EXISTS (
                 SELECT 1 FROM {table_name} WHERE `dt` = %s AND `model` = %s

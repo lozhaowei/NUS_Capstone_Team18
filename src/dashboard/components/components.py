@@ -1,8 +1,8 @@
 import streamlit as st
 from streamlit_star_rating import st_star_rating
 
-from src.dashboard.components.data_handling import get_summary_metric_for_model, get_comparison_dates_for_summary_metrics, \
-    get_graph_for_summary_metric, get_graph_for_real_time_component
+from src.dashboard.components.data_handling import get_summary_metric_for_model, get_graph_for_summary_metric, \
+    get_comparison_dates_for_summary_metrics, get_graph_for_real_time_component
 from src.dashboard.data.database import insert_model_feedback, get_model_ratings, get_upvote_percentage_for_day
 from src.dashboard.user_authen.authenticate_components import get_user_id
 from src.dashboard.data.spark_pipeline import SparkPipeline
@@ -32,6 +32,7 @@ def summary_metrics_component(entity, filtered_data, models):
 def real_time_data_visualisation_component(entity, filtered_data, models):
     """
     Visualise total like percentage of each entity
+    Includes button to update latest 3 days of data
     :param entity: entity being recommended (video / convo)
     :param filtered_data: placeholder for function_mapping
     :param models: placeholder for function_mapping
@@ -82,11 +83,14 @@ def real_time_data_visualisation_component(entity, filtered_data, models):
                 col1, col2, col3 = st.columns(3)
 
                 three_day_avg = data.tail(3)[column].mean()
-                formatted_three_day_avg = f"{three_day_avg:,.2f}" if "percentage" not in column else f"{three_day_avg:.2%}"
+                formatted_three_day_avg = f"{three_day_avg:,.2f}" if "percentage" not in column \
+                    else f"{three_day_avg:.2%} "
                 one_week_avg = data.tail(7)[column].mean()
-                formatted_one_week_avg = f"{one_week_avg:,.2f}" if "percentage" not in column else f"{one_week_avg:.2%}"
+                formatted_one_week_avg = f"{one_week_avg:,.2f}" if "percentage" not in column \
+                    else f"{one_week_avg:.2%}"
                 one_month_avg = data.tail(31)[column].mean()
-                formatted_one_month_avg = f"{one_month_avg:,.2f}" if "percentage" not in column else f"{one_month_avg:.2%}"
+                formatted_one_month_avg = f"{one_month_avg:,.2f}" if "percentage" not in column \
+                    else f"{one_month_avg:.2%}"
 
                 col1.metric("3D Average", formatted_three_day_avg)
                 col2.metric("1W Average", formatted_one_week_avg)
@@ -128,14 +132,14 @@ def historical_retraining_data_visualisation_component(entity, filtered_data, mo
     except Exception as e:
         print('Error loading historical retraining data visualisation component: ', e)
 
-def model_rating_component(recommended_item):
+def model_rating_component(entity):
     """
     Model Rating Component
-    :param recommended_item: item that the model recommended
+    :param entity: item that the model recommended
     """
     try:
         st.subheader("Overall Model Rating")
-        model_ratings = get_model_ratings(recommended_item)
+        model_ratings = get_model_ratings(entity)
 
         if model_ratings is None or len(model_ratings) == 0:
             print('Error getting model ratings')
@@ -158,10 +162,10 @@ def model_rating_component(recommended_item):
     except Exception as e:
         print('Error loading model rating component: ', e)
 
-def user_feedback_component(recommended_item, model_list):
+def user_feedback_component(entity, model_list):
     """
     User Feedback Form
-    :param recommended_item: item that the model recommended
+    :param entity: item that the model recommended
     :param model_list: list of models
     """
     try:
@@ -183,7 +187,7 @@ def user_feedback_component(recommended_item, model_list):
 
                 if 'username' and 'role' in st.session_state:
                     if insert_model_feedback({'feedback': feedback, 'rating': rating, 'model': model,
-                                              'recommended_item': recommended_item,
+                                              'recommended_item': entity,
                                               'user_id': get_user_id(st.session_state.username),
                                               'role':  st.session_state.role}) == 0:
                         st.success('Feedback submitted!')
