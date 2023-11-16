@@ -36,7 +36,8 @@ def get_predicted_scores(user_id, reconstructed_matrix, train_likes_table):
 
 def get_embedding_matrices(convo_likes_df, convo_categories_df, date):
     """Returns two matrices - conversation-categories matrix and user-category matrix. This allows for calculation of cosine similarity
-    between a user and a conversation based on the categories of conversations available.
+    between a user and a conversation based on the categories of conversations available. This function works on the basis that the
+    convo_categories_df has been updated with the relevant NLP, but for the new database, this will not be the case (due to extremely long runtime).
 
     Args:
         convo_likes_df (pd.DataFrame): Must contain the like_giver_id and conversation_id columns.
@@ -147,7 +148,7 @@ def statistics(convo_likes_df, convo_categories_df, k, date):
                 except KeyError:
                     predicted_score_cosine_similarity = 0
 
-                predicted_score = (0.5 * predicted_score_nmf) + (0.5 * predicted_score_cosine_similarity) # equal weight both scores
+                predicted_score = (0.5 * predicted_score_nmf) + (0.5 * predicted_score_cosine_similarity) # equal weight both scores - for new database, the score via NLP will just be 0
             else:
                 predicted_score = 0
 
@@ -170,7 +171,7 @@ def statistics(convo_likes_df, convo_categories_df, k, date):
         cosine_similarity_recommendations["similarity"] = cosine_similarity_recommendations.index \
             .map(lambda x: get_similarity(user_like_matrix, convo_category_matrix, user, x))
         cosine_similarity_recommendations = cosine_similarity_recommendations.values.ravel()
-        scores = (0.5 * scores) + (0.5 * cosine_similarity_recommendations) # equal weight both types of recommendations
+        scores = (0.5 * scores) + (0.5 * cosine_similarity_recommendations) # equal weight both types of recommendations - for new database, the score via NLP will just be 0
 
         return np.argsort(scores)[-k:]
 
