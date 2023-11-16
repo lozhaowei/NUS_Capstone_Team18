@@ -4,14 +4,54 @@ from decouple import config
 import os 
 import csv
 from datetime import datetime
+import boto3
+from botocore.exceptions import ClientError
+
+def get_secret():
+
+    secret_name = "Capstone-Team18"
+    region_name = "ap-southeast-1"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        # For a list of exceptions thrown, see
+        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+        raise e
+
+    # Decrypts secret using the associated KMS key.
+    host = get_secret_value_response['host']
+    user = get_secret_value_response['username']
+    password = get_secret_value_response['password']
+    port = get_secret_value_response['port']
+    name = get_secret_value_response['name']
+    
+    return [host, user, password, port, name]
 
 CONN_PARAMS = {
-    'host': config('DB_HOST'),
-    'user': config('DB_USER'),
-    'password': config('DB_PASSWORD'),
-    'port': int(config('DB_PORT')),
-    'database': config('DB_NAME'),
+    'host': get_secret[0],
+    'user': get_secret[1],
+    'password': get_secret[2],
+    'port': int(get_secret[3]),
+    'database': get_secret[4],
 }
+
+# CONN_PARAMS = {
+#     'host': config('DB_HOST'),
+#     'user': config('DB_USER'),
+#     'password': config('DB_PASSWORD'),
+#     'port': int(config('DB_PORT')),
+#     'database': config('DB_NAME'),
+# }
 
 def query_database(query):
     """
