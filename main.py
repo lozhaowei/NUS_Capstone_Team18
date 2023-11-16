@@ -35,10 +35,10 @@ def main():
     start_date_str = start_date.strftime('%Y-%m-%d')
     
     # Step 3: Extracting the latest Video Data 
-    list_of_tables = ['user_interest', 'season', 'video', 'user', 'vote']
-    existing_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasets', 'raw_new')
-    latest_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasets', 'latest')
-    pull_latest_data_and_combine(list_of_tables, existing_data_dir, latest_data_dir)
+    list_of_v_tables = ['user_interest', 'season', 'video', 'user', 'vote']
+    existing_v_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasets', 'raw_new')
+    latest_v_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasets', 'Last-24hour-data')
+    pull_latest_data_and_combine(list_of_v_tables, existing_v_data_dir, latest_v_data_dir)
 
     # Step 4: Run KNN (Video) Model
     knn_eval_video = run_knn_recommender(start_date_str, 3, get_num_cycles(start_date_str))
@@ -63,7 +63,13 @@ def main():
 
     insert_data("nus_video_eval_2", combined_data)
 
-    # Step 10: Run the 3 models for Conversations Recommendations
+    # Step 10: Extracting the latest Conversation Data 
+    list_of_c_tables = ['conversation_like']
+    existing_c_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasets', 'raw_new')
+    latest_c_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasets', 'Last-24hour-data')
+    pull_latest_data_and_combine(list_of_c_tables, existing_c_data_dir, latest_c_data_dir)
+
+    # Step 11: Run the 3 models for Conversations Recommendations
     # conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
     # conversation_categories = pd.read_feather("datasets/final/conversation_with_categories.feather")
     # knn_eval_convo = run_collaborative_recommender('2023-09-02', 10, 4, conversation_like, conversation_categories)
@@ -71,7 +77,7 @@ def main():
     # random_forest_eval_convo = run_model_convo()
     # print(random_forest_eval_convo)
 
-    # Step 11: Combine the 3 evaluation tables into 1 mega table
+    # Step 12: Combine the 3 evaluation tables into 1 mega table
     combine_tables_convo()
     clean_csv("datasets/final_new/nus_convo_eval_2.csv", "datasets/final_new/nus_convo_eval_2.csv")
     combined_data_2 = pd.read_csv("datasets/final_new/nus_convo_eval_2.csv")
