@@ -6,7 +6,6 @@ from src.video_recommend.svd import run_svd_recommender
 from src.video_recommend.random_forest import run_random_forest
 from src.video_recommend.neural_networks import run_ncf
 from src.conversation_recommend.cosine_similarity import run_collaborative_recommender
-from src.conversation_recommend.random_forest_convo import run_model_convo
 from src.conversation_recommend.alternating_least_squares import run_als_recommender
 from src.dashboard.data.spark_pipeline import SparkPipeline
 import schedule
@@ -102,8 +101,7 @@ def run_threaded(job):
     job_thread.start()
 
 if __name__ == "__main__":
-    main()
-    schedule.every().day.at("21:46").do(main)
+    schedule.every().day.at("00:00").do(main)
     schedule.every().day.at("00:00").do(run_threaded, dashboard_video_spark_job)
     schedule.every().day.at("00:00").do(run_threaded, dashboard_conversation_spark_job)
     schedule.every().day.at("06:00").do(run_threaded, dashboard_video_spark_job)
