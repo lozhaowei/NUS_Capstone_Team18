@@ -17,7 +17,7 @@ cd NUS_Capstone_Team18
 3. Install the Python dependencies from requirements.txt
 
 ``` 
-pip install --no-cache-dir -r requirements.txt
+pip install --no-cache-dir --default-timeout=100 -r requirements.txt
 ```
 
 4. Run the Python application
