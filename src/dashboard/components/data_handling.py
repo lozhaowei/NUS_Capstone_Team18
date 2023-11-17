@@ -60,7 +60,7 @@ def get_chart_data_for_multiple_models(data, models, metrics):
 
     return new_df
 
-def get_graph_for_summary_metric(filtered_data, freq, models, metrics):
+def get_graph_for_summary_metric(filtered_data, freq, models, metrics, show_retraining):
     if len(models) == 1:
         line_chart_data = filtered_data[metrics + ["dt"]].set_index("dt")
         columns_to_plot = metrics
@@ -87,7 +87,7 @@ def get_graph_for_summary_metric(filtered_data, freq, models, metrics):
         rangeslider=dict(visible=True)
     )
 
-    if freq == "D":
+    if freq == "D" and show_retraining:
         for date in filtered_data["dt"]:
             fig.add_vline(x=date, line_dash="dash", line_color="red")
 

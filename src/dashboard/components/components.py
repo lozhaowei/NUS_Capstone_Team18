@@ -120,8 +120,9 @@ def historical_retraining_data_visualisation_component(entity, filtered_data, mo
             metrics = col3.multiselect('Metrics', options=['Precision', 'Recall', 'Accuracy', 'F1 Score',
                                                            'ROC AUC Score', 'HitRatio@K', 'NDCG@K'],
                                        default='ROC AUC Score')
+            show_retraining = st.checkbox("Show Retraining Dates")
 
-            fig = get_graph_for_summary_metric(filtered_data, freq, models, metrics)
+            fig = get_graph_for_summary_metric(filtered_data, freq, models, metrics, show_retraining)
             st.plotly_chart(fig, use_container_width=True)
 
         with tab2:
