@@ -1,4 +1,4 @@
-# nus_capstone_v2
+# NUS_Capstone_Team18
 This project is part of our BT4103 NUS Capstone Final Year Project, which is completed with Recce Pvt Ltd. Our project serves to address the issues by designing an interactive and visual platform to analyse and evaluate the performance of recommender systems. The dashboard will serve as a centralised hub where users can explore various aspects of recommender system performance. It will also provide insights into the performance of recommender systems and suggest areas of improvement.
 
 ### Getting Started
