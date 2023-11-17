@@ -69,13 +69,11 @@ def main():
     pull_latest_data_and_combine(list_of_c_tables, existing_c_data_dir, latest_c_data_dir)
 
     # Step 11: Run the 3 models for Conversations Recommendations
-    # conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
-    # conversation_categories = pd.read_feather("datasets/final/conversation_with_categories.feather")
     knn_eval_convo = run_collaborative_recommender(start_date_str, 10, get_num_cycles(start_date_str), conversation_like)
     als_eval_convo = run_als_recommender(start_date_str, 10, get_num_cycles(start_date_str), conversation_like)
+    # conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
+    # conversation_categories = pd.read_feather("datasets/final/conversation_with_categories.feather")
     # print(knn_eval_convo)
-    # random_forest_eval_convo = run_model_convo()
-    # print(random_forest_eval_convo)
 
     # Step 12: Combine the 3 evaluation tables into 1 mega table
     combine_tables_convo()
