@@ -42,5 +42,9 @@ python -m streamlit run src/dashboard/Home.py
 ```
 3. Navigate to browser and log in.
 
+### Dashboard Spark ETL Pipeline
+
+1. Download Hadoop 3.3.6 binary from https://hadoop.apache.org/releases.html and extract the contents into the C drive.
+
 ### Project Report
 Our detailed report can be found here: https://docs.google.com/document/d/1s5PVFjjTz8m-oRtuiF0NurSGWRHOZ4A0sw86d-KDYO0/edit?usp=sharing
