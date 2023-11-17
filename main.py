@@ -71,7 +71,8 @@ def main():
     # Step 11: Run the 3 models for Conversations Recommendations
     # conversation_like = pd.read_feather("datasets/raw/conversation_like.feather")
     # conversation_categories = pd.read_feather("datasets/final/conversation_with_categories.feather")
-    # knn_eval_convo = run_collaborative_recommender('2023-09-02', 10, 4, conversation_like, conversation_categories)
+    knn_eval_convo = run_collaborative_recommender(start_date_str, 10, get_num_cycles(start_date_str), conversation_like)
+    als_eval_convo = run_als_recommender(start_date_str, 10, get_num_cycles(start_date_str), conversation_like)
     # print(knn_eval_convo)
     # random_forest_eval_convo = run_model_convo()
     # print(random_forest_eval_convo)
