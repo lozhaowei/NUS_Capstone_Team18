@@ -5,13 +5,13 @@ This project is part of our BT4103 NUS Capstone Final Year Project, which is com
 1. Clone this repositry:
 
 ``` 
-git clone https://github.com/lozhaowei/nus_capstone_v2.git
+git clone https://github.com/lozhaowei/NUS_Capstone_Team18.git
 ```
 
 2. Navigate to Cloned Repositry Directory
 
 ``` 
-cd nus_capstone_v2
+cd NUS_Capstone_Team18
 ```
 
 3. Install the Python dependencies from requirements.txt
