@@ -161,7 +161,7 @@ def get_summary_statistics(vote_df, video_df, train_df, test_df, date, K):
     vote_test = vote_df[vote_df["created_at"] > date]
     vote_test['created_at'] = vote_test['created_at'].dt.date
     model_statistics = pd.DataFrame(columns=['dt', 'roc_auc_score', 'accuracy', 'precision', 'recall', 'f1_score', 'hit_ratio_k', 'ndcg_k'])
-    model = RandomForestRegressor(n_estimators=50, max_features=8, max_samples=0.7)
+    model = RandomForestRegressor(max_depth=n_estimators=50, max_features=8, max_samples=0.7)
     model.fit(train_df.loc[:, train_df.columns != "upvotes"], train_df["upvotes"])
     test_df["prediction"] = model.predict(test_df)
 
